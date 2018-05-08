@@ -64,11 +64,23 @@ polygon collider =
 
 
 
--- Meta Attributes
+-- String Attributes
 
 
 id =
     Svg.Attributes.id
+
+
+result =
+    Svg.Attributes.result
+
+
+filter =
+    Svg.Attributes.filter
+
+
+stdDeviation =
+    Svg.Attributes.stdDeviation
 
 
 patternUnits =

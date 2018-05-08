@@ -3,38 +3,67 @@ module App exposing (..)
 import AnimationFrame
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Svg exposing (..)
-import Svg.Attributes.Typed exposing (..)
+import Svg.Attributes.Typed as SAT exposing (..)
 import Time
 
 
 ---
 
 
+blade : Degrees -> Svg a
+blade angle =
+    Svg.rect
+        [ width 0.025
+        , height 0.4
+        , fill "#aaa"
+        , stroke "none"
+        , transform [ rotateDeg angle ]
+        ]
+        []
+
+
+propeller : Svg a
+propeller =
+    g
+        []
+        [ blade 0
+        , blade 120
+        , blade 240
+        ]
+
+
 prop : Seconds -> Svg a
 prop t =
     g
-        [ transform
-            [ rotateDeg (t * 100) ]
-        ]
+        []
         [ defs
             []
             [ Svg.filter
                 [ id "blur" ]
                 [ feGaussianBlur
                     [ result "blur"
-                    , stdDeviation "0.02 0.02"
+                    , stdDeviation "0.008 0"
                     ]
                     []
                 ]
             ]
-        , rect
-            [ x -0.1
-            , y -0.1
-            , width 0.2
-            , height 0.2
-            , Svg.Attributes.filter "url(#blur)"
+        , g
+            [ SAT.filter "url(#blur)"
+            , transform [ rotateDeg (t * -200) ]
             ]
-            []
+            [ propeller ]
+        , g
+            [ SAT.filter "url(#blur)"
+            , opacity 0.5
+            , transform [ rotateDeg (120 + t * -333) ]
+            ]
+            [ propeller ]
+        , g
+            [ SAT.filter "url(#blur)"
+            , transform [ rotateDeg (240 + t * -777) ]
+            , opacity 0.3
+            ]
+            [ propeller ]
         ]
 
 
@@ -157,4 +186,5 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    AnimationFrame.diffs OnAnimationFrame
+    --AnimationFrame.diffs OnAnimationFrame
+    Time.every (1000 / 10) OnAnimationFrame
