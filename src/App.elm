@@ -7,6 +7,46 @@ import Svg.Attributes.Typed exposing (..)
 import Time
 
 
+---
+
+
+prop : Seconds -> Svg a
+prop t =
+    g
+        [ transform
+            [ rotateDeg (t * 100) ]
+        ]
+        [ defs
+            []
+            [ Svg.filter
+                [ id "blur" ]
+                [ feGaussianBlur
+                    [ result "blur"
+                    , stdDeviation "0.02 0.02"
+                    ]
+                    []
+                ]
+            ]
+        , rect
+            [ x -0.1
+            , y -0.1
+            , width 0.2
+            , height 0.2
+            , Svg.Attributes.filter "url(#blur)"
+            ]
+            []
+        ]
+
+
+
+---
+
+
+type alias Seconds =
+    Float
+
+
+
 -- Msg
 
 
@@ -19,7 +59,7 @@ type Msg
 
 
 type alias Model =
-    String
+    Seconds
 
 
 
@@ -28,7 +68,7 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    noCmd ""
+    noCmd 0
 
 
 
@@ -44,7 +84,7 @@ update : Vec2 -> Msg -> Model -> ( Model, Cmd Msg )
 update mousePosition msg model =
     case msg of
         OnAnimationFrame dt ->
-            noCmd model
+            noCmd (model + dt / 1000)
 
 
 
@@ -111,6 +151,7 @@ view model =
         , circle [ cx -0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy -0.5, r 0.1, fill "red" ] []
+        , prop model
         ]
 
 
