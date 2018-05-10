@@ -3,15 +3,15 @@ module App exposing (..)
 import AnimationFrame
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Svg exposing (..)
-import Svg.Attributes exposing (..)
-import Time exposing (Time)
+import Svg.Attributes.Typed exposing (..)
+import Time
 
 
 -- Msg
 
 
 type Msg
-    = OnAnimationFrame Time
+    = OnAnimationFrame Time.Time
 
 
 
@@ -58,10 +58,10 @@ checkersBackground numberOfSquaresPerSide =
             1.0 / toFloat numberOfSquaresPerSide
 
         s =
-            toString squareSize
+            squareSize
 
         s2 =
-            toString (squareSize * 2)
+            squareSize * 2
     in
     g
         []
@@ -74,8 +74,8 @@ checkersBackground numberOfSquaresPerSide =
                 , patternUnits "userSpaceOnUse"
                 ]
                 [ rect
-                    [ x "0"
-                    , y "0"
+                    [ x 0
+                    , y 0
                     , width s
                     , height s
                     , fill "#eee"
@@ -93,10 +93,10 @@ checkersBackground numberOfSquaresPerSide =
             ]
         , rect
             [ fill "url(#grid)"
-            , x "-0.5"
-            , y "-0.5"
-            , width "1"
-            , height "1"
+            , x -0.5
+            , y -0.5
+            , width 1
+            , height 1
             ]
             []
         ]
@@ -107,10 +107,10 @@ view model =
     g
         []
         [ checkersBackground 10
-        , circle [ cx "-0.5", cy "-0.5", r "0.1", fill "red" ] []
-        , circle [ cx "-0.5", cy "0.5", r "0.1", fill "red" ] []
-        , circle [ cx "0.5", cy "0.5", r "0.1", fill "red" ] []
-        , circle [ cx "0.5", cy "-0.5", r "0.1", fill "red" ] []
+        , circle [ cx -0.5, cy -0.5, r 0.1, fill "red" ] []
+        , circle [ cx -0.5, cy 0.5, r 0.1, fill "red" ] []
+        , circle [ cx 0.5, cy 0.5, r 0.1, fill "red" ] []
+        , circle [ cx 0.5, cy -0.5, r 0.1, fill "red" ] []
         ]
 
 
