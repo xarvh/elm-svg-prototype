@@ -50,17 +50,37 @@ vecToString v =
 -- Polygons
 
 
-polygon : List Vec2 -> Svg a
-polygon collider =
-    Svg.path
-        [ collider
-            |> List.map vecToString
-            |> String.join " L"
-            |> (\s -> "M" ++ s ++ " Z")
-            |> d
-        , opacity 0.5
-        ]
-        []
+regularPolygon : Int -> List (Svg.Attribute a) -> Svg a
+regularPolygon sides attributes =
+    let
+        sideAngle =
+            2 * pi / toFloat sides
+
+        indexToVertices index =
+            let
+                a =
+                    sideAngle * toFloat index
+            in
+            vec2 (sin a) (cos a)
+
+        vertices =
+            List.range 0 (sides - 1)
+                |> List.map indexToVertices
+    in
+    polygon vertices attributes
+
+
+polygon : List Vec2 -> List (Svg.Attribute a) -> Svg a
+polygon vertices attributes =
+    let
+        svgD =
+            vertices
+                |> List.map vecToString
+                |> String.join " L"
+                |> (\s -> "M" ++ s ++ " Z")
+                |> d
+    in
+    Svg.path (svgD :: attributes) []
 
 
 
@@ -116,6 +136,11 @@ rotateDeg angleInDeg =
 
 
 -- Color Attributes
+
+
+fillRgb : Int -> Int -> Int -> Svg.Attribute a
+fillRgb r g b =
+    Svg.Attributes.fill <| "rgb(" ++ toString r ++ "," ++ toString g ++ "," ++ toString b ++ ")"
 
 
 fill =
