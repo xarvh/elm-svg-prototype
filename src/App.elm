@@ -92,10 +92,10 @@ opts =
     , sizeLimit = 0.1
     , distanceF = (+)
     , shadeF = (+) 20
-    , maxX = 0.3
-    , maxY = 0.3
-    , minX = -0.3
-    , minY = -0.3
+    , maxX = 0.5
+    , maxY = 0.5
+    , minX = -0.5
+    , minY = -0.5
     }
 
 
@@ -153,7 +153,7 @@ generateChain options =
             , size = options.initialSize
             , angleToParent = angle
             , shade = shade
-            , sides = 7
+            , sides = 4
             }
 
         append : Node -> List Poly -> List Poly
@@ -163,22 +163,44 @@ generateChain options =
     Random.map4 makePoly
         (Random.float options.minX options.maxX)
         (Random.float options.minY options.maxY)
-        (Random.float 0 (2 * pi))
+        --(Random.float 0 (2 * pi))
+        (randomConstant (pi / 4))
         (Random.int 0 30)
         |> Random.andThen (generateNode options)
         |> Random.map (\node -> append node [])
 
 
+quadGenerator : Options -> Generator Poly
+quadGenerator options =
+  let
+      makeQuad x y size shade =
+            { position = vec2 x y
+            , size = size
+            , angleToParent = 0
+            , shade = shade
+            , sides = 4
+            }
+  in
+  Random.map4 makeQuad
+        (Random.float options.minX options.maxX)
+        (Random.float options.minY options.maxY)
+        (Random.float 0.03 0.12)
+        (Random.int 200 255)
+
+
+
+
+
+
 pol =
     let
         generator =
-            Random.list 10 (generateChain opts)
+            Random.list 500 (quadGenerator opts)
 
         ( pl, seed ) =
             Random.step generator (Random.initialSeed 10)
     in
     pl
-        |> List.concat
         |> List.sortBy .size
         |> List.reverse
 
@@ -288,8 +310,8 @@ view : Model -> Svg Msg
 view model =
     g
         []
-        [ checkersBackground 10
-        , circle [ cx -0.5, cy -0.5, r 0.1, fill "red" ] []
+        --[ checkersBackground 10
+        [ circle [ cx -0.5, cy -0.5, r 0.1, fill "red" ] []
         , circle [ cx -0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy -0.5, r 0.1, fill "red" ] []
