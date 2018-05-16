@@ -2,6 +2,7 @@ module App exposing (..)
 
 import AnimationFrame
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
+import Random exposing (Generator)
 import Svg exposing (..)
 import Svg.Attributes.Typed exposing (..)
 import Time
@@ -81,26 +82,58 @@ makePoly angleIndex parent =
             Vec2.add parent.position displacement
     in
     { position = position
-    , scale = scale
+    , scale = scale * 1.05
     , angleToParent = angleToParent
-    , shade = parent.shade
+    , shade = parent.shade + 5
     , sides = parent.sides
     }
 
 
+randomConstant : a -> Generator a
+randomConstant value =
+    Random.int 0 1 |> Random.map (always value)
+
+
+angleToGenerator : Poly -> Int -> Generator Node
+angleToGenerator parent angleIndex =
+    let
+        child =
+            makePoly angleIndex parent
+    in
+    if child.scale > 1 then
+        randomConstant (Node child [])
+    else
+        generate child
+            |> Random.map (\new -> Node child [ new ])
+
+
+generate : Poly -> Generator Node
+generate poly =
+    Random.int 1 (poly.sides - 1)
+        |> Random.andThen (angleToGenerator poly)
+
+
+polys : Model -> List Poly
 polys model =
     let
         poly0 =
             { position = vec2 0 0
-            , scale = 0.1
-            , angleToParent = model / 1000
-            , shade = 200
+            , scale = 0.01
+            , angleToParent = 1.2 --model / 1000
+            , shade = 50
             , sides = 6
             }
+
+        ( node, seed ) =
+            Random.step (generate poly0) (Random.initialSeed 0)
+
+        append : Node -> List Poly -> List Poly
+        append (Node poly childNodes) list =
+            List.foldl append (poly :: list) childNodes
     in
-    [ poly0
-    , makePoly 0 poly0
-    ]
+    append node []
+        |> List.sortBy .scale
+        |> List.reverse
 
 
 

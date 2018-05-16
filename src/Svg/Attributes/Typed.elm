@@ -140,7 +140,7 @@ rotateDeg angleInDeg =
 
 fillRgb : Int -> Int -> Int -> Svg.Attribute a
 fillRgb r g b =
-    Svg.Attributes.fill <| "rgb(" ++ toString r ++ "," ++ toString g ++ "," ++ toString b ++ ")"
+    Svg.Attributes.fill <| "rgb(" ++ toString (clamp 0 255 r) ++ "," ++ toString (clamp 0 255 g) ++ "," ++ toString (clamp 0 255 b) ++ ")"
 
 
 fill =
