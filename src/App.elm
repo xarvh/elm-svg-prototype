@@ -17,7 +17,7 @@ type Node
 
 type alias Poly =
     { position : Vec2
-    , scale : Float
+    , size : Float
     , angleToParent : Float
     , shade : Int
     , sides : Int
@@ -30,9 +30,11 @@ viewPoly poly =
         [ transform
             [ translate poly.position
             , rotateRad poly.angleToParent
-            , scale poly.scale
+            , scale poly.size
             ]
         , fillRgb poly.shade poly.shade poly.shade
+--         , stroke "#fff"
+--         , strokeWidth 0.01
         ]
 
 
@@ -62,78 +64,128 @@ normalizeAngle angle =
         angle
 
 
-
---
-
-
-makePoly : Int -> Poly -> Poly
-makePoly angleIndex parent =
-    let
-        angleToParent =
-            parent.angleToParent + toFloat angleIndex * (2 * pi / toFloat parent.sides)
-
-        scale =
-            parent.scale * 1.2
-
-        displacement =
-            Vec2.scale (scale + parent.scale) (angleToVector angleToParent)
-
-        position =
-            Vec2.add parent.position displacement
-    in
-    { position = position
-    , scale = scale * 1.05
-    , angleToParent = angleToParent
-    , shade = parent.shade + 5
-    , sides = parent.sides
-    }
-
-
 randomConstant : a -> Generator a
 randomConstant value =
     Random.int 0 1 |> Random.map (always value)
 
 
-angleToGenerator : Poly -> Int -> Generator Node
-angleToGenerator parent angleIndex =
+
+--
+
+
+type alias Options =
+    { scaleF : Float -> Float
+    , initialSize : Float
+    , sizeLimit : Float
+    , distanceF : Float -> Float -> Float
+    , shadeF : Int -> Int
+    , maxX : Float
+    , maxY : Float
+    , minX : Float
+    , minY : Float
+    }
+
+
+opts =
+    { scaleF = (+) 0.01
+    , initialSize = 0.01
+    , sizeLimit = 0.1
+    , distanceF = (+)
+    , shadeF = (+) 20
+    , maxX = 0.3
+    , maxY = 0.3
+    , minX = -0.3
+    , minY = -0.3
+    }
+
+
+parentMakesChild : Options -> Int -> Poly -> Poly
+parentMakesChild options angleIndex parent =
+    let
+        angleToParent =
+            parent.angleToParent + toFloat angleIndex * (2 * pi / toFloat parent.sides)
+
+        -- parents are always *SMALLER* than children
+        size =
+            options.scaleF parent.size
+
+        displacement =
+            Vec2.scale (options.distanceF size parent.size) (angleToVector angleToParent)
+
+        position =
+            Vec2.add parent.position displacement
+
+        shade =
+            options.shadeF parent.shade
+    in
+    { position = position
+    , size = size
+    , angleToParent = angleToParent
+    , shade = shade
+    , sides = parent.sides
+    }
+
+
+angleToNodeGenerator : Options -> Poly -> Int -> Generator Node
+angleToNodeGenerator options parent angleIndex =
     let
         child =
-            makePoly angleIndex parent
+            parentMakesChild options angleIndex parent
     in
-    if child.scale > 1 then
+    if child.size > options.sizeLimit then
         randomConstant (Node child [])
     else
-        generate child
+        generateNode options child
             |> Random.map (\new -> Node child [ new ])
 
 
-generate : Poly -> Generator Node
-generate poly =
+generateNode : Options -> Poly -> Generator Node
+generateNode options poly =
     Random.int 1 (poly.sides - 1)
-        |> Random.andThen (angleToGenerator poly)
+        |> Random.andThen (angleToNodeGenerator options poly)
 
 
-polys : Model -> List Poly
-polys model =
+generateChain : Options -> Generator (List Poly)
+generateChain options =
     let
-        poly0 =
-            { position = vec2 0 0
-            , scale = 0.01
-            , angleToParent = 1.2 --model / 1000
-            , shade = 50
-            , sides = 6
+        makePoly x y angle shade =
+            { position = vec2 x y
+            , size = options.initialSize
+            , angleToParent = angle
+            , shade = shade
+            , sides = 7
             }
-
-        ( node, seed ) =
-            Random.step (generate poly0) (Random.initialSeed 0)
 
         append : Node -> List Poly -> List Poly
         append (Node poly childNodes) list =
             List.foldl append (poly :: list) childNodes
     in
-    append node []
-        |> List.sortBy .scale
+    Random.map4 makePoly
+        (Random.float options.minX options.maxX)
+        (Random.float options.minY options.maxY)
+        (Random.float 0 (2 * pi))
+        (Random.int 0 30)
+        |> Random.andThen (generateNode options)
+        |> Random.map (\node -> append node [])
+
+
+pol =
+    let
+        generator =
+            Random.list 10 (generateChain opts)
+
+        ( pl, seed ) =
+            Random.step generator (Random.initialSeed 10)
+    in
+    pl
+        |> List.concat
+        |> List.sortBy .size
         |> List.reverse
+
+
+polys : Model -> List Poly
+polys model =
+    pol
 
 
 
