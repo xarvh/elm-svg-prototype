@@ -81,7 +81,7 @@ prop t =
                 , r 0.8
                 ]
                 [ Svg.stop [ SA.offset "0%", SA.stopOpacity "0" ] []
-                , Svg.stop [ SA.offset "100%", SA.stopOpacity "0.2" ] []
+                , Svg.stop [ SA.offset "100%", SA.stopOpacity "0.1" ] []
                 ]
             ]
 
@@ -95,7 +95,7 @@ prop t =
                , blade 288
                , circle
                    [ r 0.4
-                   , opacity 0.1
+                   , opacity 0.05
                    ]
                    []
               ]
@@ -221,5 +221,5 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    --AnimationFrame.times OnAnimationFrame
-    Time.every (1000 / 10) OnAnimationFrame
+    AnimationFrame.times OnAnimationFrame
+    --Time.every (1000 / 10) OnAnimationFrame
