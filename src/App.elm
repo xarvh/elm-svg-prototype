@@ -3,6 +3,7 @@ module App exposing (..)
 import AnimationFrame
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Svg exposing (..)
+import Svg.Attributes as SA
 import Svg.Attributes.Typed as SAT exposing (..)
 import Time
 
@@ -12,40 +13,31 @@ import Time
 
 blade : Degrees -> Svg a
 blade angle =
-  let
-      length = 0.4
-
-      fillColor = "#aaa"
-
-  in
+    let
+        length =
+            0.4
+    in
     g
         [ transform [ rotateDeg angle ]
+            , SAT.filter "url(#blur)"
         ]
         [ Svg.rect
             [ width 0.025
+            , x -0.0125
             , height length
-            , fill fillColor
+            , fill "url(#bladeRect)"
             , stroke "none"
             ]
             []
         , Svg.path
             [ roundArcD length (7 * pi / 12) (5 * pi / 12)
-            , fill fillColor
+            , fill "url(#bladeArc)"
             , stroke "none"
-            , opacity 0.5
             ]
             []
         ]
 
 
-propeller : Svg a
-propeller =
-    g
-        []
-        [ blade 0
-        , blade 120
-        , blade 240
-        ]
 
 
 prop : Seconds -> Svg a
@@ -73,24 +65,40 @@ prop t =
                     ]
                     []
                 ]
+            , Svg.radialGradient
+                [ id "bladeRect"
+                , cx 0.5
+                , cy 0
+                , r 0.8
+                ]
+                [ Svg.stop [ SA.offset "0%", SA.stopOpacity "1" ] []
+                , Svg.stop [ SA.offset "100%", SA.stopOpacity "0" ] []
+                ]
+            , Svg.radialGradient
+                [ id "bladeArc"
+                , cx 0.5
+                , cy 0
+                , r 0.8
+                ]
+                [ Svg.stop [ SA.offset "0%", SA.stopOpacity "0" ] []
+                , Svg.stop [ SA.offset "100%", SA.stopOpacity "0.2" ] []
+                ]
             ]
 
-        {-
-           , g
-               [ SAT.filter "url(#blur)"
-               , transform [ rotateDeg angleInDeg ]
+       , g
+               [ transform [ rotateDeg angleInDeg ]
                ]
-               [ propeller ]
-           , circle
-               [ r 0.4
-               , opacity 0.2
-               , SAT.filter "url(#blur)"
-               ]
-               []
-        -}
-        , blade 0
-
-        --, roundArc 0.4 (pi /2 )
+               [ blade 0
+               , blade 72
+               , blade 144
+               , blade 216
+               , blade 288
+               , circle
+                   [ r 0.4
+                   , opacity 0.1
+                   ]
+                   []
+              ]
         ]
 
 
@@ -213,5 +221,5 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    --      AnimationFrame.times OnAnimationFrame
+    --AnimationFrame.times OnAnimationFrame
     Time.every (1000 / 10) OnAnimationFrame
