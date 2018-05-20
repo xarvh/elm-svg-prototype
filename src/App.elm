@@ -12,14 +12,30 @@ import Time
 
 blade : Degrees -> Svg a
 blade angle =
-    Svg.rect
-        [ width 0.025
-        , height 0.4
-        , fill "#aaa"
-        , stroke "none"
-        , transform [ rotateDeg angle ]
+  let
+      length = 0.4
+
+      fillColor = "#aaa"
+
+  in
+    g
+        [ transform [ rotateDeg angle ]
         ]
-        []
+        [ Svg.rect
+            [ width 0.025
+            , height length
+            , fill fillColor
+            , stroke "none"
+            ]
+            []
+        , Svg.path
+            [ roundArcD length (7 * pi / 12) (5 * pi / 12)
+            , fill fillColor
+            , stroke "none"
+            , opacity 0.5
+            ]
+            []
+        ]
 
 
 propeller : Svg a
@@ -34,6 +50,17 @@ propeller =
 
 prop : Seconds -> Svg a
 prop t =
+    let
+        -- degrees per second
+        speed =
+            1000
+
+        v =
+            t * speed
+
+        angleInDeg =
+            toFloat (floor v % 360)
+    in
     g
         []
         [ defs
@@ -47,23 +74,23 @@ prop t =
                     []
                 ]
             ]
-        , g
-            [ SAT.filter "url(#blur)"
-            , transform [ rotateDeg (t * -200) ]
-            ]
-            [ propeller ]
-        , g
-            [ SAT.filter "url(#blur)"
-            , opacity 0.5
-            , transform [ rotateDeg (120 + t * -333) ]
-            ]
-            [ propeller ]
-        , g
-            [ SAT.filter "url(#blur)"
-            , transform [ rotateDeg (240 + t * -777) ]
-            , opacity 0.3
-            ]
-            [ propeller ]
+
+        {-
+           , g
+               [ SAT.filter "url(#blur)"
+               , transform [ rotateDeg angleInDeg ]
+               ]
+               [ propeller ]
+           , circle
+               [ r 0.4
+               , opacity 0.2
+               , SAT.filter "url(#blur)"
+               ]
+               []
+        -}
+        , blade 0
+
+        --, roundArc 0.4 (pi /2 )
         ]
 
 
@@ -112,8 +139,8 @@ noCmd model =
 update : Vec2 -> Msg -> Model -> ( Model, Cmd Msg )
 update mousePosition msg model =
     case msg of
-        OnAnimationFrame dt ->
-            noCmd (model + dt / 1000)
+        OnAnimationFrame time ->
+            noCmd (time / 1000)
 
 
 
@@ -186,5 +213,5 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    --AnimationFrame.diffs OnAnimationFrame
+    --      AnimationFrame.times OnAnimationFrame
     Time.every (1000 / 10) OnAnimationFrame
