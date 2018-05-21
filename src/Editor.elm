@@ -5,8 +5,21 @@ import Svg exposing (Svg, g)
 import Svg.Attributes.Typed exposing (..)
 
 
-origin =
-    vec2 0 0
+rotateVector : Float -> Vec2 -> Vec2
+rotateVector angle v =
+    let
+        ( x, y ) =
+            Vec2.toTuple v
+
+        sinA =
+            sin -angle
+
+        cosA =
+            cos angle
+    in
+    vec2
+        (x * cosA - y * sinA)
+        (x * sinA + y * cosA)
 
 
 
@@ -15,79 +28,46 @@ origin =
 
 type Node id frame
     = Node
-      { id : id
-      , origin : frame -> Vec2
-      , rotation : frame -> Float
-      }
-      (List (Node id frame))
+        { id : id
+        , origin : frame -> Vec2
+        , rotation : frame -> Float
+        }
+        (List (Node id frame))
 
 
-
-drawRig : Vec2 -> Float -> (Vec2 -> Float -> Id -> renderArtefact) -> frame -> Node id frame -> List renderArtefact
+drawRig : Vec2 -> Float -> (Vec2 -> Float -> id -> renderArtefact) -> frame -> Node id frame -> List renderArtefact
 drawRig parentAbsoluteOrigin parentAbsoluteRotation renderNode frame (Node node children) =
-  let
-      absoluteRotation = parentAbsoluteRotation + (node.rotation frame)
+    let
+        absoluteRotation =
+            parentAbsoluteRotation + node.rotation frame
 
-      offset = node.origin frame |> rotate absoluteRotation
+        offset =
+            node.origin frame |> rotateVector absoluteRotation
 
+        absoluteOrigin =
+            Vec2.add parentAbsoluteOrigin offset
 
-
-      absoluteOrigin = Vec2.add parentAbsoluteOrigin offset
-
-      drawChildren =
-        drawRig absoluteOrigin absoluteRotation renderNode frame
-
-  in
-  renderNode absoluteOrigin absoluteRotation :: List.map drawChildren children
-
-
-
+        drawChildren =
+            drawRig absoluteOrigin absoluteRotation renderNode frame
+    in
+    renderNode absoluteOrigin absoluteRotation node.id :: List.concat (List.map drawChildren children)
 
 
 
 -- mantis rig
 
-type Side
-  = Left | Right
-
-type Node id frame
-    = Node
-      { id : id
-      , origin : frame -> Vec2
-      , rotation : frame -> Float
-      }
-      (List (Node id frame))
-
-
-
-drawRig : Vec2 -> Float -> (Vec2 -> Float -> Id -> renderArtefact) -> frame -> Node id frame -> List renderArtefact
-drawRig parentAbsoluteOrigin parentAbsoluteRotation renderNode frame (Node node children) =
-  let
-      absoluteOrigin = Vec2.add parentAbsoluteOrigin (node.origin frame)
-      absoluteRotation = parentAbsoluteRotation + (node.rotation frame)
-
-      drawChildren =
-        drawRig absoluteOrigin absoluteRotation renderNode frame
-
-  in
-  renderNode absoluteOrigin absoluteRotation :: List.map drawChildren children
-
-
-
-
-
-
--- mantis rig
 
 type Side
-  = Left | Right
+    = Left
+    | Right
 
 
 type MantisBody
-  = Torso
-  | Shoulder Side
-  | Elbow Side
-  | Wrist Side
+    = Torso
+    | Shoulder Side
+    | Elbow Side
+    | Wrist Side
+
 
 type alias MantisFrame =
     { torsoA : Float
@@ -96,29 +76,43 @@ type alias MantisFrame =
     }
 
 
+halfTorsoWidth =
+    0.4
+
+
+upperArmLength =
+    0.2
+
+
+leftShoulderOrigin =
+    \_ -> vec2 -halfTorsoWidth 0
+
+
+leftElbowOrigin =
+    \_ -> vec2 -upperArmLength 0
+
+
 mantisRig : Node MantisBody MantisFrame
 mantisRig =
     Node
-      { id = Torso
-      , origin = always (vec2 0 0)
-      , rotation = .torsoA
-      }
-      [ Node
-        { id = Shoulder Left
-        , origin = leftShoulderOrigin
-        , rotation = .leftShoulderA
+        { id = Torso
+        , origin = always (vec2 0 0)
+        , rotation = .torsoA
         }
         [ Node
-          { id = Elbow Left
-          , origin = leftElbowOrigin
-          , rotation = .leftElbowA
-          }
-          []
+            { id = Shoulder Left
+            , origin = leftShoulderOrigin
+            , rotation = .leftShoulderA
+            }
+            [ Node
+                { id = Elbow Left
+                , origin = leftElbowOrigin
+                , rotation = .leftElbowA
+                }
+                []
+            ]
         ]
-      ]
 
-
--- draw
 
 
 -- TEA
