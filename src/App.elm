@@ -1,6 +1,7 @@
 module App exposing (..)
 
 import AnimationFrame
+import Editor
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Svg exposing (..)
 import Svg.Attributes.Typed exposing (..)
@@ -12,6 +13,7 @@ import Time
 
 type Msg
     = OnAnimationFrame Time.Time
+    | OnEditorMsg Editor.Msg
 
 
 
@@ -19,7 +21,7 @@ type Msg
 
 
 type alias Model =
-    String
+    Editor.Model
 
 
 
@@ -28,7 +30,7 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    noCmd ""
+    noCmd Editor.init
 
 
 
@@ -45,6 +47,9 @@ update mousePosition msg model =
     case msg of
         OnAnimationFrame dt ->
             noCmd model
+
+        OnEditorMsg subMsg ->
+            Editor.update subMsg model |> noCmd
 
 
 
@@ -111,9 +116,10 @@ view model =
         , circle [ cx -0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy -0.5, r 0.1, fill "red" ] []
+        , Editor.view model |> Svg.map OnEditorMsg
         ]
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    AnimationFrame.diffs OnAnimationFrame
+    Editor.subscriptions model |> Sub.map OnEditorMsg
