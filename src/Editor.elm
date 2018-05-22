@@ -83,6 +83,7 @@ type alias MantisFrame =
     { torsoA : Float
     , leftShoulderA : Float
     , leftElbowA : Float
+    , leftWristA : Float
     }
 
 
@@ -95,6 +96,7 @@ open1 =
     { torsoA = 0
     , leftShoulderA = pi
     , leftElbowA = 0
+    , leftWristA = 0
     }
 
 
@@ -109,6 +111,9 @@ updateSelectedFrame ( dx, dy ) nodeId frame =
 
         Elbow Left ->
             { frame | leftElbowA = frame.leftElbowA + 0.005 * dx }
+
+        Wrist Left ->
+            { frame | leftWristA = frame.leftWristA + 0.005 * dx }
 
         _ ->
             frame
@@ -144,7 +149,13 @@ mantisRig frame =
                     , rotation = frame.leftElbowA
                     }
                   , Node (Elbow Left)
-                        []
+                        [ ( { translation = vec2 lowerArmLength 0
+                            , rotation = frame.leftWristA
+                            }
+                          , Node (Wrist Left)
+                                []
+                          )
+                        ]
                   )
                 ]
           )
@@ -158,6 +169,35 @@ rect tr id fillColor strokeColor cx cy w h =
         , y <| cy - h / 2
         , width w
         , height h
+        , Svg.Events.onClick (Select id)
+        , tr
+        , fill fillColor
+        , stroke strokeColor
+        , strokeWidth 0.01
+        ]
+        []
+
+
+tri tr id fillColor strokeColor base height offset =
+    let
+        -- base is AB, y = 0
+        aX =
+            -base / 2 |> toString
+
+        bX =
+            base / 2 |> toString
+
+        cX =
+            offset |> toString
+
+        cY =
+            height |> toString
+
+        theD =
+            [ "M", aX, "0 L", cX, cY, "L", bX, "0 Z" ] |> String.join " "
+    in
+    Svg.path
+        [ d theD
         , Svg.Events.onClick (Select id)
         , tr
         , fill fillColor
@@ -197,6 +237,9 @@ renderMantisNode selectedBodyId position angle bodyId =
 
         Elbow side ->
             rr (lowerArmLength / 2) 0 lowerArmLength 0.06
+
+        Wrist Left ->
+            tri tr bodyId fillColor strokeColor 0.05 0.3 0
 
         _ ->
             Debug.crash "WTF"
