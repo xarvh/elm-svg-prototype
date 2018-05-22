@@ -24,38 +24,44 @@ rotateVector angle v =
 
 
 
--- Nodes
+-- Super-Generic Nodes
 
 
-type Node id frame
-    = Node
-        { id : id
-        , origin : frame -> Vec2
-        , rotation : frame -> Float
-        }
-        (List (Node id frame))
+type Node transform payload
+    = Node payload (List ( transform, Node transform payload ))
 
 
-renderRig : Vec2 -> Float -> (Vec2 -> Float -> id -> renderArtefact) -> frame -> Node id frame -> List renderArtefact
-renderRig parentAbsoluteOrigin parentAbsoluteRotation renderNode frame (Node node children) =
+expandNode : (t -> t -> t) -> t -> ( t, Node t payload ) -> List ( t, payload )
+expandNode chainTransform parentWorldTransform ( transform, Node payload children ) =
     let
-        absoluteRotation =
-            parentAbsoluteRotation + node.rotation frame
+        worldTransform =
+            chainTransform parentWorldTransform transform
 
-        offset =
-            node.origin frame |> rotateVector absoluteRotation
-
-        absoluteOrigin =
-            Vec2.add parentAbsoluteOrigin offset
-
-        drawChildren =
-            renderRig absoluteOrigin absoluteRotation renderNode frame
+        expandedNode =
+            ( worldTransform, payload )
     in
-    renderNode absoluteOrigin absoluteRotation node.id :: List.concat (List.map drawChildren children)
+    expandedNode :: List.concat (List.map (expandNode chainTransform worldTransform) children)
 
 
 
--- mantis rig
+-- Herzog Drei-specific stuff
+
+
+type alias Transform =
+    { translation : Vec2
+    , rotation : Float
+    }
+
+
+chainTransform : Transform -> Transform -> Transform
+chainTransform parent child =
+    { translation = child.translation |> rotateVector parent.rotation |> Vec2.add parent.translation
+    , rotation = parent.rotation + child.rotation
+    }
+
+
+
+-- Mantis-specific stuff
 
 
 type Side
@@ -77,25 +83,23 @@ type alias MantisFrame =
     }
 
 
+type alias MantisNode =
+    Node Transform MantisBody
+
+
 
 --
 
 
 halfTorsoWidth =
-    0.4
+    0.2
 
 
 upperArmLength =
     0.2
 
-
-leftShoulderOrigin =
-    \_ -> vec2 -halfTorsoWidth 0
-
-
-leftElbowOrigin =
-    \_ -> vec2 -upperArmLength 0
-
+lowerArmLength =
+    0.3
 
 open1 : MantisFrame
 open1 =
@@ -109,25 +113,21 @@ open1 =
 --
 
 
-mantisRig : Node MantisBody MantisFrame
-mantisRig =
-    Node
-        { id = Torso
-        , origin = always (vec2 0 0)
-        , rotation = .torsoA
-        }
-        [ Node
-            { id = Shoulder Left
-            , origin = leftShoulderOrigin
-            , rotation = .leftShoulderA
+mantisRig : MantisFrame -> MantisNode
+mantisRig frame =
+    Node Torso
+        [ ( { translation = vec2 -halfTorsoWidth 0
+            , rotation = -pi + pi / 6
             }
-            [ Node
-                { id = Elbow Left
-                , origin = leftElbowOrigin
-                , rotation = .leftElbowA
-                }
-                []
-            ]
+          , Node (Shoulder Left)
+                [ ( { translation = vec2 upperArmLength 0
+                    , rotation = pi / 4
+                    }
+                  , Node (Elbow Left)
+                        []
+                  )
+                ]
+          )
         ]
 
 
@@ -156,10 +156,10 @@ renderMantisNode position angle bodyId =
             rect tr bodyId 0 0 (halfTorsoWidth * 2) 0.2 "red"
 
         Shoulder side ->
-            rect tr bodyId 0.1 0 0.2 0.1 "blue"
+            rect tr bodyId (upperArmLength / 2) 0 upperArmLength 0.1 "blue"
 
         Elbow side ->
-            rect tr bodyId 0.1 0 0.2 0.1 "green"
+            rect tr bodyId (lowerArmLength / 2) 0 lowerArmLength 0.06 "green"
 
         _ ->
             Debug.crash "WTF"
@@ -211,8 +211,23 @@ update msg model =
 
 view : Model -> Svg Msg
 view model =
-    renderRig (vec2 0 0) 0 renderMantisNode open1 mantisRig
-        |> g [ transform [ scale 0.4 ] ]
+    let
+        unitTransform =
+            { translation = vec2 0 0
+            , rotation = 0
+            }
+
+        torsoTransform =
+            { translation = vec2 0 0
+            , rotation = 0
+            }
+
+        nodes =
+            expandNode chainTransform unitTransform ( torsoTransform, mantisRig open1 )
+    in
+    nodes
+        |> List.map (\( { translation, rotation }, id ) -> renderMantisNode translation rotation id)
+        |> g [ transform [ scale 0.5 ] ]
 
 
 
