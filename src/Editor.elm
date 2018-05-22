@@ -1,5 +1,7 @@
 module Editor exposing (..)
 
+import Array exposing (Array)
+import Html
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Svg exposing (Svg, g)
 import Svg.Attributes.Typed exposing (..)
@@ -98,8 +100,10 @@ halfTorsoWidth =
 upperArmLength =
     0.2
 
+
 lowerArmLength =
     0.3
+
 
 open1 : MantisFrame
 open1 =
@@ -131,7 +135,7 @@ mantisRig frame =
         ]
 
 
-rect tr id cx cy w h color =
+rect tr id fillColor strokeColor cx cy w h =
     Svg.rect
         [ x <| cx - w / 2
         , y <| cy - h / 2
@@ -139,27 +143,43 @@ rect tr id cx cy w h color =
         , height h
         , Svg.Events.onClick (Select id)
         , tr
-        , fill color
-        , opacity 0.8
+        , fill fillColor
+        , stroke strokeColor
+        , strokeWidth 0.01
         ]
         []
 
 
-renderMantisNode : Vec2 -> Float -> MantisBody -> Svg Msg
-renderMantisNode position angle bodyId =
+renderMantisNode : MantisBody -> Vec2 -> Float -> MantisBody -> Svg Msg
+renderMantisNode selectedBodyId position angle bodyId =
     let
         tr =
             transform [ translate position, rotateRad angle ]
+
+        isSelected =
+            selectedBodyId == bodyId
+
+        fillColor =
+            "#aaa"
+
+        strokeColor =
+            if isSelected then
+                "green"
+            else
+                "#ccc"
+
+        rr =
+            rect tr bodyId fillColor strokeColor
     in
     case bodyId of
         Torso ->
-            rect tr bodyId 0 0 (halfTorsoWidth * 2) 0.2 "red"
+            rr 0 0 (halfTorsoWidth * 2) 0.2
 
         Shoulder side ->
-            rect tr bodyId (upperArmLength / 2) 0 upperArmLength 0.1 "blue"
+            rr (upperArmLength / 2) 0 upperArmLength 0.1
 
         Elbow side ->
-            rect tr bodyId (lowerArmLength / 2) 0 lowerArmLength 0.06 "green"
+            rr (lowerArmLength / 2) 0 lowerArmLength 0.06
 
         _ ->
             Debug.crash "WTF"
@@ -175,7 +195,10 @@ type Msg
 
 
 type alias Model =
-    {}
+    { frames : Array MantisFrame
+    , selectedFrameIndex : Int
+    , selectedNode : MantisBody
+    }
 
 
 
@@ -184,7 +207,10 @@ type alias Model =
 
 init : Model
 init =
-    {}
+    { frames = Array.fromList [ open1 ]
+    , selectedFrameIndex = 0
+    , selectedNode = Shoulder Left
+    }
 
 
 
@@ -198,11 +224,7 @@ update msg model =
             model
 
         Select body ->
-            let
-                q =
-                    Debug.log "" body
-            in
-            model
+            { model | selectedNode = body }
 
 
 
@@ -226,7 +248,7 @@ view model =
             expandNode chainTransform unitTransform ( torsoTransform, mantisRig open1 )
     in
     nodes
-        |> List.map (\( { translation, rotation }, id ) -> renderMantisNode translation rotation id)
+        |> List.map (\( { translation, rotation }, id ) -> renderMantisNode model.selectedNode translation rotation id)
         |> g [ transform [ scale 0.5 ] ]
 
 
