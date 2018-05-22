@@ -3,6 +3,7 @@ module Editor exposing (..)
 import Array exposing (Array)
 import Html
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
+import Mouse
 import Svg exposing (Svg, g)
 import Svg.Attributes.Typed exposing (..)
 import Svg.Events
@@ -89,6 +90,30 @@ type alias MantisNode =
     Node Transform MantisBody
 
 
+open1 : MantisFrame
+open1 =
+    { torsoA = 0
+    , leftShoulderA = pi
+    , leftElbowA = 0
+    }
+
+
+updateSelectedFrame : ( Float, Float ) -> MantisBody -> MantisFrame -> MantisFrame
+updateSelectedFrame ( dx, dy ) nodeId frame =
+    case nodeId of
+        Torso ->
+            { frame | torsoA = frame.torsoA + 0.005 * dx }
+
+        Shoulder Left ->
+            { frame | leftShoulderA = frame.leftShoulderA + 0.005 * dx }
+
+        Elbow Left ->
+            { frame | leftElbowA = frame.leftElbowA + 0.005 * dx }
+
+        _ ->
+            frame
+
+
 
 --
 
@@ -105,27 +130,18 @@ lowerArmLength =
     0.3
 
 
-open1 : MantisFrame
-open1 =
-    { torsoA = 0
-    , leftShoulderA = pi
-    , leftElbowA = 0
-    }
-
-
-
---
-
-
-mantisRig : MantisFrame -> MantisNode
+mantisRig : MantisFrame -> ( Transform, MantisNode )
 mantisRig frame =
-    Node Torso
+    ( { translation = vec2 0 0
+      , rotation = frame.torsoA
+      }
+    , Node Torso
         [ ( { translation = vec2 -halfTorsoWidth 0
-            , rotation = -pi + pi / 6
+            , rotation = frame.leftShoulderA
             }
           , Node (Shoulder Left)
                 [ ( { translation = vec2 upperArmLength 0
-                    , rotation = pi / 4
+                    , rotation = frame.leftElbowA
                     }
                   , Node (Elbow Left)
                         []
@@ -133,6 +149,7 @@ mantisRig frame =
                 ]
           )
         ]
+    )
 
 
 rect tr id fillColor strokeColor cx cy w h =
@@ -192,12 +209,17 @@ renderMantisNode selectedBodyId position angle bodyId =
 type Msg
     = Noop
     | Select MantisBody
+    | MouseUp Mouse.Position
+    | MouseDown Mouse.Position
+    | MouseMove Mouse.Position
 
 
 type alias Model =
     { frames : Array MantisFrame
     , selectedFrameIndex : Int
     , selectedNode : MantisBody
+    , maybeDragStart : Maybe Mouse.Position
+    , lastPosition : Mouse.Position
     }
 
 
@@ -210,6 +232,8 @@ init =
     { frames = Array.fromList [ open1 ]
     , selectedFrameIndex = 0
     , selectedNode = Shoulder Left
+    , maybeDragStart = Nothing
+    , lastPosition = { x = 0, y = 0 }
     }
 
 
@@ -226,6 +250,34 @@ update msg model =
         Select body ->
             { model | selectedNode = body }
 
+        MouseUp endPosition ->
+            { model | maybeDragStart = Nothing }
+
+        MouseDown startPosition ->
+            { model | maybeDragStart = Just startPosition }
+
+        MouseMove position ->
+            let
+                m =
+                    { model | lastPosition = position }
+            in
+            case ( model.maybeDragStart, Array.get model.selectedFrameIndex model.frames ) of
+                ( Just startPosition, Just frame ) ->
+                    let
+                        dx =
+                            position.x - model.lastPosition.x |> toFloat
+
+                        dy =
+                            position.y - model.lastPosition.y |> toFloat
+
+                        newFrame =
+                            updateSelectedFrame ( dx, dy ) model.selectedNode frame
+                    in
+                    { m | frames = Array.set model.selectedFrameIndex newFrame model.frames }
+
+                _ ->
+                    m
+
 
 
 -- view
@@ -233,23 +285,23 @@ update msg model =
 
 view : Model -> Svg Msg
 view model =
-    let
-        unitTransform =
-            { translation = vec2 0 0
-            , rotation = 0
-            }
+    case Array.get model.selectedFrameIndex model.frames of
+        Nothing ->
+            g [] []
 
-        torsoTransform =
-            { translation = vec2 0 0
-            , rotation = 0
-            }
+        Just frame ->
+            let
+                unitTransform =
+                    { translation = vec2 0 0
+                    , rotation = 0
+                    }
 
-        nodes =
-            expandNode chainTransform unitTransform ( torsoTransform, mantisRig open1 )
-    in
-    nodes
-        |> List.map (\( { translation, rotation }, id ) -> renderMantisNode model.selectedNode translation rotation id)
-        |> g [ transform [ scale 0.5 ] ]
+                nodes =
+                    expandNode chainTransform unitTransform (mantisRig frame)
+            in
+            nodes
+                |> List.map (\( { translation, rotation }, id ) -> renderMantisNode model.selectedNode translation rotation id)
+                |> g [ transform [ scale 0.5 ] ]
 
 
 
@@ -258,4 +310,8 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch
+        [ Mouse.ups MouseUp
+        , Mouse.downs MouseDown
+        , Mouse.moves MouseMove
+        ]
