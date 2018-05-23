@@ -31,11 +31,11 @@ rotateVector angle v =
 
 
 type Node transform payload
-    = Node payload (List ( transform, Node transform payload ))
+    = Node payload transform (List (Node transform payload))
 
 
-expandNode : (t -> t -> t) -> t -> ( t, Node t payload ) -> List ( t, payload )
-expandNode chainTransform parentWorldTransform ( transform, Node payload children ) =
+expandNode : (t -> t -> t) -> t -> Node t payload -> List ( t, payload )
+expandNode chainTransform parentWorldTransform (Node payload transform children) =
     let
         worldTransform =
             chainTransform parentWorldTransform transform
@@ -135,32 +135,28 @@ lowerArmLength =
     0.3
 
 
-mantisRig : MantisFrame -> ( Transform, MantisNode )
+mantisRig : MantisFrame -> MantisNode
 mantisRig frame =
-    ( { translation = vec2 0 0
-      , rotation = frame.torsoA
-      }
-    , Node Torso
-        [ ( { translation = vec2 -halfTorsoWidth 0
+    Node Torso
+        { translation = vec2 0 0
+        , rotation = frame.torsoA
+        }
+        [ Node (Shoulder Left)
+            { translation = vec2 -halfTorsoWidth 0
             , rotation = frame.leftShoulderA
             }
-          , Node (Shoulder Left)
-                [ ( { translation = vec2 upperArmLength 0
-                    , rotation = frame.leftElbowA
+            [ Node (Elbow Left)
+                { translation = vec2 upperArmLength 0
+                , rotation = frame.leftElbowA
+                }
+                [ Node (Wrist Left)
+                    { translation = vec2 lowerArmLength 0
+                    , rotation = frame.leftWristA
                     }
-                  , Node (Elbow Left)
-                        [ ( { translation = vec2 lowerArmLength 0
-                            , rotation = frame.leftWristA
-                            }
-                          , Node (Wrist Left)
-                                []
-                          )
-                        ]
-                  )
+                    []
                 ]
-          )
+            ]
         ]
-    )
 
 
 rect tr id fillColor strokeColor cx cy w h =
