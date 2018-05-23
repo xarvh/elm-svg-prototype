@@ -2,6 +2,7 @@ module Editor exposing (..)
 
 import Array exposing (Array)
 import Html
+import Keyboard
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Mouse
 import Svg exposing (Svg, g)
@@ -75,45 +76,86 @@ type Side
 type MantisBody
     = Torso
     | Shoulder Side
-    | Elbow Side
-    | Wrist Side
-
-
-type alias MantisFrame =
-    { torsoA : Float
-    , leftShoulderA : Float
-    , leftElbowA : Float
-    , leftWristA : Float
-    }
+    | UpperArm Side
+    | LowerArm Side
+    | Blade Side
 
 
 type alias MantisNode =
     Node Transform MantisBody
 
 
-open1 : MantisFrame
-open1 =
-    { torsoA = 0
-    , leftShoulderA = pi
-    , leftElbowA = 0
-    , leftWristA = 0
+type alias Rect =
+    { angle : Float
+    , length : Float
+    , width : Float
     }
 
 
-updateSelectedFrame : ( Float, Float ) -> MantisBody -> MantisFrame -> MantisFrame
-updateSelectedFrame ( dx, dy ) nodeId frame =
+type RectTarget
+    = Angle
+    | Width
+    | Length
+
+
+updateRect : Float -> RectTarget -> Rect -> Rect
+updateRect delta target rect =
+    case target of
+        Angle ->
+            { rect | angle = rect.angle + 0.005 * delta }
+
+        Width ->
+            { rect | width = rect.width + 0.01 * delta |> max 0.01 }
+
+        Length ->
+            { rect | length = rect.length + 0.01 * delta |> max 0.01 }
+
+
+type alias MantisFrame =
+    { torso : Rect
+    , leftShoulder : Rect
+    , leftUpperArm : Rect
+    , leftLowerArm : Rect
+    , leftBlade : Rect
+    }
+
+
+open1 : MantisFrame
+open1 =
+    { torso = { angle = 0, width = 0.2, length = 0.1 }
+    , leftShoulder = { angle = 0, width = 0.3, length = 0.1 }
+    , leftUpperArm = { angle = 0, width = 0.2, length = 0.1 }
+    , leftLowerArm = { angle = 0, width = 0.2, length = 0.1 }
+    , leftBlade = { angle = 0, width = 0.1, length = 0.2 }
+    }
+
+
+updateSelectedFrame : Bool -> Bool -> ( Float, Float ) -> MantisBody -> MantisFrame -> MantisFrame
+updateSelectedFrame shift ctrl ( dx, dy ) nodeId frame =
+    let
+        target =
+            if ctrl then
+                Length
+            else if shift then
+                Width
+            else
+                Angle
+    in
     case nodeId of
         Torso ->
-            { frame | torsoA = frame.torsoA + 0.005 * dx }
+            { frame | torso = updateRect dx target frame.torso }
 
         Shoulder Left ->
-            { frame | leftShoulderA = frame.leftShoulderA + 0.005 * dx }
+            { frame | leftShoulder = updateRect dx target frame.leftShoulder }
 
-        Elbow Left ->
-            { frame | leftElbowA = frame.leftElbowA + 0.005 * dx }
+        UpperArm Left ->
+            { frame | leftUpperArm = updateRect dx target frame.leftUpperArm }
 
-        Wrist Left ->
-            { frame | leftWristA = frame.leftWristA + 0.005 * dx }
+        LowerArm Left ->
+            { frame | leftLowerArm = updateRect dx target frame.leftLowerArm }
+
+        Blade Left ->
+            { frame | leftBlade = updateRect dx target frame.leftBlade }
 
         _ ->
             frame
@@ -123,37 +165,30 @@ updateSelectedFrame ( dx, dy ) nodeId frame =
 --
 
 
-halfTorsoWidth =
-    0.2
-
-
-upperArmLength =
-    0.2
-
-
-lowerArmLength =
-    0.3
-
-
 mantisRig : MantisFrame -> MantisNode
 mantisRig frame =
     Node Torso
         { translation = vec2 0 0
-        , rotation = frame.torsoA
+        , rotation = frame.torso.angle
         }
         [ Node (Shoulder Left)
-            { translation = vec2 -halfTorsoWidth 0
-            , rotation = frame.leftShoulderA
+            { translation = vec2 -(frame.torso.width / 2) 0
+            , rotation = frame.leftShoulder.angle
             }
-            [ Node (Elbow Left)
-                { translation = vec2 upperArmLength 0
-                , rotation = frame.leftElbowA
+            [ Node (UpperArm Left)
+                { translation = vec2 frame.leftShoulder.length 0
+                , rotation = frame.leftUpperArm.angle
                 }
-                [ Node (Wrist Left)
-                    { translation = vec2 lowerArmLength 0
-                    , rotation = frame.leftWristA
+                [ Node (LowerArm Left)
+                    { translation = vec2 frame.leftUpperArm.length 0
+                    , rotation = frame.leftLowerArm.angle
                     }
-                    []
+                    [ Node (Blade Left)
+                        { translation = vec2 frame.leftLowerArm.length 0
+                        , rotation = frame.leftBlade.angle
+                        }
+                        []
+                    ]
                 ]
             ]
         ]
@@ -203,8 +238,8 @@ tri tr id fillColor strokeColor base height offset =
         []
 
 
-renderMantisNode : MantisBody -> Vec2 -> Float -> MantisBody -> Svg Msg
-renderMantisNode selectedBodyId position angle bodyId =
+renderMantisNode : MantisFrame -> MantisBody -> Vec2 -> Float -> MantisBody -> Svg Msg
+renderMantisNode frame selectedBodyId position angle bodyId =
     let
         tr =
             transform [ translate position, rotateRad angle ]
@@ -226,16 +261,19 @@ renderMantisNode selectedBodyId position angle bodyId =
     in
     case bodyId of
         Torso ->
-            rr 0 0 (halfTorsoWidth * 2) 0.2
+            rr 0 0 frame.torso.width frame.torso.length
 
         Shoulder side ->
-            rr (upperArmLength / 2) 0 upperArmLength 0.1
+            rr (frame.leftShoulder.length / 2) 0 frame.leftShoulder.length frame.leftShoulder.width
 
-        Elbow side ->
-            rr (lowerArmLength / 2) 0 lowerArmLength 0.06
+        UpperArm side ->
+            rr (frame.leftUpperArm.length / 2) 0 frame.leftUpperArm.length frame.leftUpperArm.width
 
-        Wrist Left ->
-            tri tr bodyId fillColor strokeColor 0.05 0.3 0
+        LowerArm side ->
+            rr (frame.leftLowerArm.length / 2) 0 frame.leftLowerArm.length frame.leftLowerArm.width
+
+        Blade Left ->
+            tri tr bodyId fillColor strokeColor frame.leftBlade.length frame.leftBlade.width 0
 
         _ ->
             Debug.crash "WTF"
@@ -251,6 +289,7 @@ type Msg
     | MouseUp Mouse.Position
     | MouseDown Mouse.Position
     | MouseMove Mouse.Position
+    | Keyboard Bool Int
 
 
 type alias Model =
@@ -259,6 +298,8 @@ type alias Model =
     , selectedNode : MantisBody
     , maybeDragStart : Maybe Mouse.Position
     , lastPosition : Mouse.Position
+    , isShiftPressed : Bool
+    , isCtrlPressed : Bool
     }
 
 
@@ -273,6 +314,8 @@ init =
     , selectedNode = Shoulder Left
     , maybeDragStart = Nothing
     , lastPosition = { x = 0, y = 0 }
+    , isShiftPressed = False
+    , isCtrlPressed = False
     }
 
 
@@ -310,12 +353,23 @@ update msg model =
                             position.y - model.lastPosition.y |> toFloat
 
                         newFrame =
-                            updateSelectedFrame ( dx, dy ) model.selectedNode frame
+                            updateSelectedFrame model.isShiftPressed model.isCtrlPressed ( dx, dy ) model.selectedNode frame
                     in
                     { m | frames = Array.set model.selectedFrameIndex newFrame model.frames }
 
                 _ ->
                     m
+
+        Keyboard state key ->
+            case key of
+                16 ->
+                    { model | isShiftPressed = state }
+
+                17 ->
+                    { model | isCtrlPressed = state }
+
+                _ ->
+                    model
 
 
 
@@ -339,7 +393,7 @@ view model =
                     expandNode chainTransform unitTransform (mantisRig frame)
             in
             nodes
-                |> List.map (\( { translation, rotation }, id ) -> renderMantisNode model.selectedNode translation rotation id)
+                |> List.map (\( { translation, rotation }, id ) -> renderMantisNode frame model.selectedNode translation rotation id)
                 |> g [ transform [ scale 0.5 ] ]
 
 
@@ -353,4 +407,6 @@ subscriptions model =
         [ Mouse.ups MouseUp
         , Mouse.downs MouseDown
         , Mouse.moves MouseMove
+        , Keyboard.downs (Keyboard True)
+        , Keyboard.ups (Keyboard False)
         ]
