@@ -122,12 +122,7 @@ type alias MantisFrame =
 
 open1 : MantisFrame
 open1 =
-    { torso = { angle = 0, width = 0.2, length = 0.1 }
-    , leftShoulder = { angle = 0, width = 0.3, length = 0.1 }
-    , leftUpperArm = { angle = 0, width = 0.2, length = 0.1 }
-    , leftLowerArm = { angle = 0, width = 0.2, length = 0.1 }
-    , leftBlade = { angle = 0, width = 0.1, length = 0.2 }
-    }
+    { torso = { angle = -0.5650000000000002, width = 0.2, length = 0.1 }, leftShoulder = { angle = -3.4999999999999982, width = 0.09999999999999999, length = 0.10000000000000002 }, leftUpperArm = { angle = -0.11499999999999998, width = 0.06999999999999995, length = 0.14 }, leftLowerArm = { angle = -0.22500000000000003, width = 0.06000000000000003, length = 0.1 }, leftBlade = { angle = 3.3649999999999936, width = 0.18000000000000005, length = 0.03 } }
 
 
 updateSelectedFrame : Bool -> Bool -> ( Float, Float ) -> MantisBody -> MantisFrame -> MantisFrame
@@ -172,7 +167,7 @@ mantisRig frame =
         , rotation = frame.torso.angle
         }
         [ Node (Shoulder Left)
-            { translation = vec2 -(frame.torso.width / 2) 0
+            { translation = vec2 -(frame.torso.width / 4.1) 0
             , rotation = frame.leftShoulder.angle
             }
             [ Node (UpperArm Left)
@@ -354,6 +349,7 @@ update msg model =
 
                         newFrame =
                             updateSelectedFrame model.isShiftPressed model.isCtrlPressed ( dx, dy ) model.selectedNode frame
+                                |> Debug.log ""
                     in
                     { m | frames = Array.set model.selectedFrameIndex newFrame model.frames }
 
@@ -394,7 +390,7 @@ view model =
             in
             nodes
                 |> List.map (\( { translation, rotation }, id ) -> renderMantisNode frame model.selectedNode translation rotation id)
-                |> g [ transform [ scale 0.5 ] ]
+                |> g [ transform [ scale 0.8 ] ]
 
 
 
