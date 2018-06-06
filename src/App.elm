@@ -45,45 +45,47 @@ mech t headAngle topAngle darkColor brightColor =
             --, rectPlate "#666" "#808080" (smooth 0.14 0.1) (smooth 0.21 0.26) (smooth 0.08 0.05) 0.26 0
 
             -- arms / front wings
-            [ plates
-                (smooth 0.18 0.10)
-                (smooth 0.1 -0.05)
-                (smooth 0.1 0.08)
-                (smooth 0.23 0.25)
-                (smooth 0 0)
-            , plates
-                (smooth 0.18 0.10)
-                (smooth 0.1 0.05)
-                (smooth 0.1 0.11)
-                (smooth 0.23 0.25)
-                (smooth 0 15)
-
 
             -- mid beam
-            , rectPlate
+            [ rectPlate
                 brightColor
                 darkColor
                 0
                 (smooth -0.04 -0.13)
-                (smooth 0.45 0.03)
-                (smooth 0.17 0.60)
+                (smooth 0.03 0.03)
+                (smooth 0.60 0.60)
                 0
+            , plates
+                (smooth 0.21 0.10)
+                (smooth 0.04 0.05)
+                (smooth 0.11 0.11)
+                (smooth 0.23 0.25)
+                (smooth 15 15)
             , ellipse
                 [ cx 0
-                , cy 0
-                , rx 0.06
-                , ry  0.17
+                , cy ( smooth -0.05 0)
+                , rx (smooth 0.28 0.06 )
+                , ry  (smooth 0.10 0.17)
                 , fill darkColor
                 , stroke brightColor
                 , strokeWidth 0.02
                 ]
                 []
+            -- shoulders
+            , plates
+                (smooth 0.24 0.10)
+                (smooth -0.04 -0.05)
+                (smooth 0.15 0.08)
+                (smooth 0.23 0.25)
+                (smooth 10 0)
+
+
             -- tail
             , plates
-                (smooth 0.21 0.10)
-                (smooth -0.04 -0.45)
-                (smooth 0.15 0.10)
-                (smooth 0.23 0.15)
+                (smooth 0.13 0.10)
+                (smooth 0.34 -0.45)
+                (smooth 0.30 0.10)
+                (smooth 0.03 0.15)
                 (smooth 10 -45)
 
             ]
