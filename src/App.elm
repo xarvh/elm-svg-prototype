@@ -41,22 +41,21 @@ mech t headAngle topAngle darkColor brightColor =
         [ g
             [ transform [ scale 3, rotateRad topAngle ] ]
             -- guns
-            --[ rectPlate "#666" "#808080" -(smooth 0.14 0.1) (smooth 0.21 0.26) (smooth 0.08 0.05) 0.26 0
-            --, rectPlate "#666" "#808080" (smooth 0.14 0.1) (smooth 0.21 0.26) (smooth 0.08 0.05) 0.26 0
+            [ rectPlate "#666" "#808080" -(smooth 0.14 0.1) (smooth 0.21 0.26) (smooth 0.08 0.05) 0.26 0
+            , rectPlate "#666" "#808080" (smooth 0.14 0.1) (smooth 0.21 0.26) (smooth 0.08 0.05) 0.26 0
 
-            -- arms / front wings
-
-            -- mid beam
-            [ rectPlate
+            -- tail beam
+            , rectPlate
                 brightColor
                 darkColor
                 0
-                (smooth -0.04 -0.13)
+                (smooth -0.06 -0.13)
                 (smooth 0.03 0.03)
-                (smooth 0.60 0.60)
+                (smooth 0.20 0.60)
                 0
+            -- arms
             , plates
-                (smooth 0.21 0.10)
+                (smooth 0.21 0.08)
                 (smooth 0.04 0.05)
                 (smooth 0.11 0.11)
                 (smooth 0.23 0.25)
@@ -80,13 +79,13 @@ mech t headAngle topAngle darkColor brightColor =
                 (smooth 10 0)
 
 
-            -- tail
+            -- tail wings
             , plates
-                (smooth 0.13 0.10)
-                (smooth 0.34 -0.45)
-                (smooth 0.30 0.10)
-                (smooth 0.03 0.15)
-                (smooth 10 -45)
+                (smooth 0.08 0.10)
+                (smooth -0.16 -0.45)
+                (smooth 0.10 0.10)
+                (smooth 0.05 0.15)
+                (smooth -10 -45)
 
             ]
         , head t brightColor darkColor (step headAngle topAngle)
