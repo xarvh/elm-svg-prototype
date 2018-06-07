@@ -108,17 +108,10 @@ heli args =
 
             -- tail end
             , mirrorRectangles
-                { x = smooth -0.4 0.2
-                , y = smooth -0.2 -1.39
-                , w = smooth 0.32 0.32
-                , h = smooth 0.12 0.12
-                , a = smooth 110 20
-                }
-            , mirrorRectangles
-                { x = smooth -0.6 0.2
-                , y = smooth -0.15 -1.39
-                , w = smooth 0.22 0.32
-                , h = smooth 0.12 0.12
+                { x = smooth -0.55 0.2
+                , y = smooth -0.05 -1.39
+                , w = smooth 0.52 0.32
+                , h = smooth 0.42 0.12
                 , a = smooth 110 20
                 }
             , ellipse
