@@ -66,54 +66,74 @@ heli args =
     g []
         [ g
             [ transform [ rotateRad args.fireAngle ] ]
-
             -- mid winglets
             [ mirrorRectangles
-                { x = 0.40
-                , y = 0.16
+                { x = 0.4
+                , y = smooth 0.3 0.16
                 , w = 0.7
                 , h = 0.3
-                , a = 20
+                , a = smooth -90 20
                 }
 
-            -- cockpit
+            -- main heli body
             , ellipse
                 { x = 0
-                , y = 0
-                , w = 0.42
-                , h = 1.90
+                , y = smooth -0.04 0
+                , w = smooth 0.8 0.42
+                , h = smooth 0.37 1.9
                 }
 
-            -- engine sides
-            , mirrorRectangles
-                { x = 0.20
-                , y = 0
-                , w = 0.20
-                , h = 0.68
-                , a = 5
+            -- main mech body
+            , ellipse
+                { x = 0
+                , y = smooth -0.04 0
+                , w = smooth 1.4 0.42
+                , h = smooth 0.5 0.5
                 }
 
             -- engine
+            , mirrorRectangles
+                { x = 0.2
+                , y = smooth -0.4 0
+                , w = 0.2
+                , h = smooth 0.4 0.68
+                , a = 5
+                }
             , ellipse
                 { x = 0
-                , y = 0.10
-                , w = 0.30
-                , h = 0.70
+                , y = smooth -0.41 0.1
+                , w = 0.3
+                , h = smooth 0.4 0.7
                 }
 
             -- tail end
             , mirrorRectangles
-                { x = 0.20
-                , y = -1.39
-                , w = 0.32
-                , h = 0.12
-                , a = 20
+                { x = smooth -0.4 0.2
+                , y = smooth -0.2 -1.39
+                , w = smooth 0.32 0.32
+                , h = smooth 0.12 0.12
+                , a = smooth 110 20
+                }
+            , mirrorRectangles
+                { x = smooth -0.6 0.2
+                , y = smooth -0.15 -1.39
+                , w = smooth 0.22 0.32
+                , h = smooth 0.12 0.12
+                , a = smooth 110 20
                 }
             , ellipse
                 { x = 0
-                , y = -1.15
-                , w = 0.20
-                , h = 0.57
+                , y = smooth -0.35 -1.15
+                , w = 0.2
+                , h = smooth 0.2 0.57
+                }
+
+            -- cockpit / head
+            , ellipse
+                { x = 0
+                , y = smooth 0.03 0.75
+                , w = smooth 0.48 0.22
+                , h = smooth 0.8 0.4
                 }
             ]
 
@@ -357,12 +377,12 @@ plane args =
             , rectPlate "#666" "#808080" (smooth 0.14 0.1) (smooth 0.21 0.26) (smooth 0.08 0.05) 0.26 0
 
             -- arms / front wings
---             , plates
---                 (smooth 0.18 0.25)
---                 (smooth 0.1 0.03)
---                 (smooth 0.1 0.4)
---                 (smooth 0.23 0.15)
---                 (smooth 0 15)
+            , plates
+                (smooth 0.18 0.25)
+                (smooth 0.1 0.03)
+                (smooth 0.1 0.4)
+                (smooth 0.23 0.15)
+                (smooth 0 15)
 
             -- mid beam
             , rectPlate
@@ -375,12 +395,12 @@ plane args =
                 0
 
             -- shoulders / rear wings
---             , plates
---                 (smooth 0.21 0.12)
---                 (smooth -0.04 -0.25)
---                 (smooth 0.15 0.15)
---                 (smooth 0.23 0.25)
---                 (smooth 10 -45)
+            , plates
+                (smooth 0.21 0.12)
+                (smooth -0.04 -0.25)
+                (smooth 0.15 0.15)
+                (smooth 0.23 0.25)
+                (smooth 10 -45)
             ]
         , planeHead args.transformState args.fill args.stroke (step args.lookAngle args.fireAngle)
         ]
@@ -420,9 +440,6 @@ planeHead t fillColor strokeColor angle =
         , eye 0.05 (smooth 0.03 0.15) 6
         , eye -0.05 (smooth 0.03 0.15) -6
         ]
-
-
-
 
 
 view : Model -> Svg Msg
