@@ -65,18 +65,18 @@ heli args =
     in
     g []
         [ g
-            [ transform [ rotateRad args.fireAngle ] ]
+            [ transform [ rotateRad args.fireAngle, translate2 0 0.2, scale2 2.5 1.5 ] ]
             -- base
-            [ rectangle
-                { x = 0
-                , y = 0.38
-                , w = 0.3
-                , h = 0.36
-                , a = 0
-                }
+--             [ rectangle
+--                 { x = 0
+--                 , y = 0.38
+--                 , w = 0.3
+--                 , h = 0.36
+--                 , a = 0
+--                 }
 
             -- tail main
-            , ellipse
+            [ ellipse
                 { x = 0
                 , y = -0.17
                 , w = 0.12
@@ -84,17 +84,17 @@ heli args =
                 }
 
             -- front winglets
-            , mirrorRectangles
-                { x = 0.11
-                , y = 0.53
-                , w = 0.11
-                , h = 0.2
-                , a = -30
-                }
+--             , mirrorRectangles
+--                 { x = 0.11
+--                 , y = 0.53
+--                 , w = 0.11
+--                 , h = 0.2
+--                 , a = -30
+--                 }
 
             -- mid winglets
             , mirrorRectangles
-                { x = 0.23
+                { x = 0.20
                 , y = 0.11
                 , w = 0.2
                 , h = 0.37
@@ -113,19 +113,19 @@ heli args =
             -- cockpit
             , ellipse
                 { x = 0
-                , y = 0.71
+                , y = 0.41
                 , w = 0.17
                 , h = 0.53
                 }
 
             -- cockpit rear
-            , rectangle
-                { x = 0
-                , y = 0.36
-                , w = 0.14
-                , h = 0.33
-                , a = 0
-                }
+--             , rectangle
+--                 { x = 0
+--                 , y = 0.36
+--                 , w = 0.14
+--                 , h = 0.33
+--                 , a = 0
+--                 }
 
             -- engine
             , ellipse
@@ -134,26 +134,26 @@ heli args =
                 , w = 0.19
                 , h = 0.53
                 }
-            , ellipse
-                { x = 0
-                , y = 0.2
-                , w = 0.13
-                , h = 0.23
-                }
+--             , ellipse
+--                 { x = 0
+--                 , y = 0.2
+--                 , w = 0.13
+--                 , h = 0.23
+--                 }
 
             -- tail end
-            , ellipse
-                { x = 0
-                , y = -0.77
-                , w = 0.1
-                , h = 0.38
-                }
             , mirrorRectangles
                 { x = 0.08
                 , y = -0.93
                 , w = 0.13
                 , h = 0.08
                 , a = 20
+                }
+            , ellipse
+                { x = 0
+                , y = -0.77
+                , w = 0.1
+                , h = 0.38
                 }
             ]
 
@@ -397,12 +397,12 @@ plane args =
             , rectPlate "#666" "#808080" (smooth 0.14 0.1) (smooth 0.21 0.26) (smooth 0.08 0.05) 0.26 0
 
             -- arms / front wings
-            , plates
-                (smooth 0.18 0.25)
-                (smooth 0.1 0.03)
-                (smooth 0.1 0.4)
-                (smooth 0.23 0.15)
-                (smooth 0 15)
+--             , plates
+--                 (smooth 0.18 0.25)
+--                 (smooth 0.1 0.03)
+--                 (smooth 0.1 0.4)
+--                 (smooth 0.23 0.15)
+--                 (smooth 0 15)
 
             -- mid beam
             , rectPlate
@@ -415,12 +415,12 @@ plane args =
                 0
 
             -- shoulders / rear wings
-            , plates
-                (smooth 0.21 0.12)
-                (smooth -0.04 -0.25)
-                (smooth 0.15 0.15)
-                (smooth 0.23 0.25)
-                (smooth 10 -45)
+--             , plates
+--                 (smooth 0.21 0.12)
+--                 (smooth -0.04 -0.25)
+--                 (smooth 0.15 0.15)
+--                 (smooth 0.23 0.25)
+--                 (smooth 10 -45)
             ]
         , planeHead args.transformState args.fill args.stroke (step args.lookAngle args.fireAngle)
         ]
@@ -483,7 +483,7 @@ view model =
         , circle [ cx -0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy -0.5, r 0.1, fill "red" ] []
-        , g [ transform [ scale 0.5 ] ] [ heli args ]
+        , g [ transform [ translate2 0.15 0, scale 0.3 ] ] [ heli args ]
         , g [ transform [ scale 0.1, translate2 -4 -3 ] ] [ heli args ]
         , g [ transform [ scale 0.1, translate2 -4 0 ] ] [ plane args ]
         ]
