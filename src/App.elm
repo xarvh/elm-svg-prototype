@@ -20,7 +20,7 @@ type alias Args =
 
 strokeW : Svg.Attribute a
 strokeW =
-    strokeWidth 0.03
+    strokeWidth 0.06
 
 
 heli : Args -> Svg a
@@ -65,95 +65,55 @@ heli args =
     in
     g []
         [ g
-            [ transform [ rotateRad args.fireAngle, translate2 0 0.2, scale2 2.5 1.5 ] ]
-            -- base
---             [ rectangle
---                 { x = 0
---                 , y = 0.38
---                 , w = 0.3
---                 , h = 0.36
---                 , a = 0
---                 }
-
-            -- tail main
-            [ ellipse
-                { x = 0
-                , y = -0.17
-                , w = 0.12
-                , h = 0.97
-                }
-
-            -- front winglets
---             , mirrorRectangles
---                 { x = 0.11
---                 , y = 0.53
---                 , w = 0.11
---                 , h = 0.2
---                 , a = -30
---                 }
+            [ transform [ rotateRad args.fireAngle ] ]
 
             -- mid winglets
-            , mirrorRectangles
-                { x = 0.20
-                , y = 0.11
-                , w = 0.2
-                , h = 0.37
-                , a = -60
-                }
-
-            -- engine sides
-            , mirrorRectangles
-                { x = 0.1
-                , y = 0.06
-                , w = 0.11
-                , h = 0.45
-                , a = 5
+            [ mirrorRectangles
+                { x = 0.40
+                , y = 0.16
+                , w = 0.7
+                , h = 0.3
+                , a = 20
                 }
 
             -- cockpit
             , ellipse
                 { x = 0
-                , y = 0.41
-                , w = 0.17
-                , h = 0.53
+                , y = 0
+                , w = 0.42
+                , h = 1.90
                 }
 
-            -- cockpit rear
---             , rectangle
---                 { x = 0
---                 , y = 0.36
---                 , w = 0.14
---                 , h = 0.33
---                 , a = 0
---                 }
+            -- engine sides
+            , mirrorRectangles
+                { x = 0.20
+                , y = 0
+                , w = 0.20
+                , h = 0.68
+                , a = 5
+                }
 
             -- engine
             , ellipse
                 { x = 0
-                , y = 0.14
-                , w = 0.19
-                , h = 0.53
+                , y = 0.10
+                , w = 0.30
+                , h = 0.70
                 }
---             , ellipse
---                 { x = 0
---                 , y = 0.2
---                 , w = 0.13
---                 , h = 0.23
---                 }
 
             -- tail end
             , mirrorRectangles
-                { x = 0.08
-                , y = -0.93
-                , w = 0.13
-                , h = 0.08
+                { x = 0.20
+                , y = -1.39
+                , w = 0.32
+                , h = 0.12
                 , a = 20
                 }
             , ellipse
                 { x = 0
-                , y = -0.77
-                , w = 0.1
-                , h = 0.38
+                , y = -1.15
+                , w = 0.20
+                , h = 0.57
                 }
             ]
 
