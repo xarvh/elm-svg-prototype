@@ -76,7 +76,7 @@ heli args =
         [ g
             [ transform [ rotateRad args.fireAngle ] ]
             [ guns
-                { x = smooth 0.32 0.3
+                { x = smooth 0.42 0.3
                 , y = smooth 0.63 0.33
                 , w = smooth 0.24 0.15
                 , h = 0.68
@@ -84,7 +84,7 @@ heli args =
 
             -- mid winglets
             , mirrorRectangles
-                { x = 0.4
+                { x = smooth 0.5 0.4
                 , y = smooth 0.3 0.16
                 , w = 0.7
                 , h = 0.3
