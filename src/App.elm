@@ -71,6 +71,17 @@ heli args =
                 [ rectangleColor "#666" "#808080" { x = ar.x, y = ar.y, w = ar.w, h = ar.h, a = 0 }
                 , rectangleColor "#666" "#808080" { x = -ar.x, y = ar.y, w = ar.w, h = ar.h, a = 0 }
                 ]
+
+        eye ar =
+            Svg.ellipse
+                [ transform [ translate2 ar.x ar.y, rotateDeg ar.a ]
+                , fill "#f80000"
+                , stroke "#990000"
+                , strokeWidth 0.03
+                , ry 0.08
+                , rx 0.05
+                ]
+                []
     in
     g []
         [ g
@@ -136,17 +147,35 @@ heli args =
                 , w = 0.2
                 , h = smooth 0.2 0.57
                 }
-
-            -- cockpit / head
-            , ellipse
-                { x = 0
-                , y = smooth 0.03 0.75
-                , w = smooth 0.48 0.22
-                , h = smooth 0.8 0.4
-                }
             ]
 
         --         , heliHead args.transformState args.fill args.stroke (step args.lookAngle args.fireAngle)
+        , g
+            [ transform [ rotateRad args.fireAngle ] ]
+            -- cockpit / head
+            [ ellipse
+                { x = 0
+                , y = smooth 0.03 0.75
+                , w = smooth 0.48 0.22
+                , h = smooth 0.80 0.40
+                }
+
+            , eye
+              { x = 0
+              , y = smooth 0.32 0.85
+              , a = smooth 0 0
+              }
+            , eye
+              { x = smooth -0.14 -0.09
+              , y = smooth 0.18 0.70
+              , a = smooth 15 -10
+              }
+            , eye
+              { x = smooth 0.14 0.09
+              , y = smooth 0.18 0.70
+              , a = smooth -15 10
+              }
+            ]
         ]
 
 
@@ -249,8 +278,8 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    { state = 1
-    , transformTo = Heli
+    { state = 0
+    , transformTo = Mech
     }
         |> noCmd
 
