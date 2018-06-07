@@ -32,11 +32,11 @@ heli args =
         step =
             view_step args.transformState 0
 
-        rectangle ar =
+        rectangleColor fillColor strokeColor ar =
             rect
                 [ transform [ translate2 ar.x ar.y, rotateDeg ar.a ]
-                , fill args.fill
-                , stroke args.stroke
+                , fill fillColor
+                , stroke strokeColor
                 , strokeW
                 , width ar.w
                 , height ar.h
@@ -44,6 +44,9 @@ heli args =
                 , y (-ar.h / 2)
                 ]
                 []
+
+        rectangle =
+            rectangleColor args.fill args.stroke
 
         mirrorRectangles ar =
             g []
@@ -62,12 +65,25 @@ heli args =
                 , strokeW
                 ]
                 []
+
+        guns ar =
+            g []
+                [ rectangleColor "#666" "#808080" { x = ar.x, y = ar.y, w = ar.w, h = ar.h, a = 0 }
+                , rectangleColor "#666" "#808080" { x = -ar.x, y = ar.y, w = ar.w, h = ar.h, a = 0 }
+                ]
     in
     g []
         [ g
             [ transform [ rotateRad args.fireAngle ] ]
+            [ guns
+                { x = smooth 0.32 0.3
+                , y = smooth 0.63 0.33
+                , w = smooth 0.24 0.15
+                , h = 0.68
+                }
+
             -- mid winglets
-            [ mirrorRectangles
+            , mirrorRectangles
                 { x = 0.4
                 , y = smooth 0.3 0.16
                 , w = 0.7
