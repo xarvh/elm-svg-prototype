@@ -9,91 +9,160 @@ import Svg.Events
 import Time
 
 
-mech : Float -> Angle -> Angle -> String -> String -> Svg a
-mech t headAngle topAngle darkColor brightColor =
+type alias Args =
+    { transformState : Float
+    , lookAngle : Angle
+    , fireAngle : Angle
+    , fill : String
+    , stroke : String
+    }
+
+
+strokeW : Svg.Attribute a
+strokeW =
+    strokeWidth 0.03
+
+
+heli : Args -> Svg a
+heli args =
     let
         smooth =
-            view_smooth t
+            view_smooth args.transformState
 
         step =
-            view_step t 0
+            view_step args.transformState 0
 
-        rectPlate strokeColor fillColor xx yy ww hh aa =
+        rectangle ar =
             rect
-                [ transform [ translate2 xx yy, rotateDeg aa ]
-                , fill fillColor
-                , stroke strokeColor
-                , strokeWidth 0.02
-                , width ww
-                , height hh
-                , x (-ww / 2)
-                , y (-hh / 2)
+                [ transform [ translate2 ar.x ar.y, rotateDeg ar.a ]
+                , fill args.fill
+                , stroke args.stroke
+                , strokeW
+                , width ar.w
+                , height ar.h
+                , x (-ar.w / 2)
+                , y (-ar.h / 2)
                 ]
                 []
 
-        plates xx yy ww hh aa =
+        mirrorRectangles ar =
             g []
-                [ rectPlate brightColor darkColor -xx yy ww hh -aa
-                , rectPlate brightColor darkColor xx yy ww hh aa
+                [ rectangle { ar | x = -ar.x, a = -ar.a }
+                , rectangle ar
                 ]
+
+        ellipse ar =
+            Svg.ellipse
+                [ cx ar.x
+                , cy ar.y
+                , rx (ar.w / 2)
+                , ry (ar.h / 2)
+                , fill args.fill
+                , stroke args.stroke
+                , strokeW
+                ]
+                []
     in
     g []
         [ g
-            [ transform [ scale 3, rotateRad topAngle ] ]
-            -- guns
-            [ rectPlate "#666" "#808080" -(smooth 0.14 0.1) (smooth 0.21 0.26) (smooth 0.08 0.05) 0.26 0
-            , rectPlate "#666" "#808080" (smooth 0.14 0.1) (smooth 0.21 0.26) (smooth 0.08 0.05) 0.26 0
+            [ transform [ rotateRad args.fireAngle ] ]
+            -- base
+            [ rectangle
+                { x = 0
+                , y = 0.38
+                , w = 0.3
+                , h = 0.36
+                , a = 0
+                }
 
-            -- tail beam
-            , rectPlate
-                brightColor
-                darkColor
-                0
-                (smooth -0.06 -0.13)
-                (smooth 0.03 0.03)
-                (smooth 0.20 0.60)
-                0
-            -- arms
-            , plates
-                (smooth 0.21 0.08)
-                (smooth 0.04 0.05)
-                (smooth 0.11 0.11)
-                (smooth 0.23 0.25)
-                (smooth 15 15)
+            -- tail main
             , ellipse
-                [ cx 0
-                , cy ( smooth -0.05 0)
-                , rx (smooth 0.28 0.06 )
-                , ry  (smooth 0.10 0.17)
-                , fill darkColor
-                , stroke brightColor
-                , strokeWidth 0.02
-                ]
-                []
-            -- shoulders
-            , plates
-                (smooth 0.24 0.10)
-                (smooth -0.04 -0.05)
-                (smooth 0.15 0.08)
-                (smooth 0.23 0.25)
-                (smooth 10 0)
+                { x = 0
+                , y = -0.17
+                , w = 0.12
+                , h = 0.97
+                }
 
+            -- front winglets
+            , mirrorRectangles
+                { x = 0.11
+                , y = 0.53
+                , w = 0.11
+                , h = 0.2
+                , a = -30
+                }
 
-            -- tail wings
-            , plates
-                (smooth 0.08 0.10)
-                (smooth -0.16 -0.45)
-                (smooth 0.10 0.10)
-                (smooth 0.05 0.15)
-                (smooth -10 -45)
+            -- mid winglets
+            , mirrorRectangles
+                { x = 0.23
+                , y = 0.11
+                , w = 0.2
+                , h = 0.37
+                , a = -60
+                }
 
+            -- engine sides
+            , mirrorRectangles
+                { x = 0.1
+                , y = 0.06
+                , w = 0.11
+                , h = 0.45
+                , a = 5
+                }
+
+            -- cockpit
+            , ellipse
+                { x = 0
+                , y = 0.71
+                , w = 0.17
+                , h = 0.53
+                }
+
+            -- cockpit rear
+            , rectangle
+                { x = 0
+                , y = 0.36
+                , w = 0.14
+                , h = 0.33
+                , a = 0
+                }
+
+            -- engine
+            , ellipse
+                { x = 0
+                , y = 0.14
+                , w = 0.19
+                , h = 0.53
+                }
+            , ellipse
+                { x = 0
+                , y = 0.2
+                , w = 0.13
+                , h = 0.23
+                }
+
+            -- tail end
+            , ellipse
+                { x = 0
+                , y = -0.77
+                , w = 0.1
+                , h = 0.38
+                }
+            , mirrorRectangles
+                { x = 0.08
+                , y = -0.93
+                , w = 0.13
+                , h = 0.08
+                , a = 20
+                }
             ]
-        , head t brightColor darkColor (step headAngle topAngle)
+
+        --         , heliHead args.transformState args.fill args.stroke (step args.lookAngle args.fireAngle)
         ]
 
 
-head : Float -> String -> String -> Angle -> Svg a
-head t brightColor darkColor angle =
+heliHead : Float -> String -> String -> Angle -> Svg a
+heliHead t fillColor strokeColor angle =
     let
         smooth =
             view_smooth t
@@ -118,15 +187,15 @@ head t brightColor darkColor angle =
                 []
     in
     g
-        [ transform [ scale 3, rotateRad angle ] ]
+        [ transform [ rotateRad angle ] ]
         [ ellipse
             [ cx 0
-            , cy <| smooth -0.01 0.11
-            , rx <| smooth 0.08 0.10
-            , ry  0.17
-            , fill darkColor
-            , stroke brightColor
-            , strokeWidth 0.02
+            , cy 0.72
+            , rx 0.09
+            , ry 0.225
+            , fill fillColor
+            , stroke strokeColor
+            , strokeW
             ]
             []
         , eye (smooth 0.04 0.03) (smooth 0.13 0.26) (smooth -24 -80)
@@ -292,8 +361,121 @@ checkersBackground numberOfSquaresPerSide =
         ]
 
 
+plane : Args -> Svg a
+plane args =
+    let
+        smooth =
+            view_smooth args.transformState
+
+        step =
+            view_step args.transformState 0
+
+        rectPlate strokeColor fillColor xx yy ww hh aa =
+            rect
+                [ transform [ translate2 xx yy, rotateDeg aa ]
+                , fill fillColor
+                , stroke strokeColor
+                , strokeWidth 0.02
+                , width ww
+                , height hh
+                , x (-ww / 2)
+                , y (-hh / 2)
+                ]
+                []
+
+        plates xx yy ww hh aa =
+            g []
+                [ rectPlate args.fill args.stroke -xx yy ww hh -aa
+                , rectPlate args.fill args.stroke xx yy ww hh aa
+                ]
+    in
+    g []
+        [ g
+            [ transform [ scale 3, rotateRad args.fireAngle ] ]
+            -- guns
+            [ rectPlate "#666" "#808080" -(smooth 0.14 0.1) (smooth 0.21 0.26) (smooth 0.08 0.05) 0.26 0
+            , rectPlate "#666" "#808080" (smooth 0.14 0.1) (smooth 0.21 0.26) (smooth 0.08 0.05) 0.26 0
+
+            -- arms / front wings
+            , plates
+                (smooth 0.18 0.25)
+                (smooth 0.1 0.03)
+                (smooth 0.1 0.4)
+                (smooth 0.23 0.15)
+                (smooth 0 15)
+
+            -- mid beam
+            , rectPlate
+                args.fill
+                args.stroke
+                0
+                (smooth -0.04 0.04)
+                (smooth 0.45 0.3)
+                (smooth 0.17 0.12)
+                0
+
+            -- shoulders / rear wings
+            , plates
+                (smooth 0.21 0.12)
+                (smooth -0.04 -0.25)
+                (smooth 0.15 0.15)
+                (smooth 0.23 0.25)
+                (smooth 10 -45)
+            ]
+        , planeHead args.transformState args.fill args.stroke (step args.lookAngle args.fireAngle)
+        ]
+
+
+planeHead : Float -> String -> String -> Angle -> Svg a
+planeHead t fillColor strokeColor angle =
+    let
+        smooth =
+            view_smooth t
+
+        eye xx yy aa =
+            ellipse
+                [ transform [ translate2 xx yy, rotateDeg aa ]
+                , fill "#f80000"
+                , stroke "#990000"
+                , strokeWidth 0.01
+                , ry 0.027
+                , rx 0.018
+                ]
+                []
+    in
+    g
+        [ transform [ scale 3, rotateRad angle ] ]
+        [ ellipse
+            [ cx 0
+            , cy -0.01
+            , rx 0.08
+            , ry <| smooth 0.17 0.34
+            , fill fillColor
+            , stroke strokeColor
+            , strokeWidth 0.02
+            ]
+            []
+        , eye 0.03 (smooth 0.1 0.22) 14
+        , eye -0.03 (smooth 0.1 0.22) -14
+        , eye 0.05 (smooth 0.03 0.15) 6
+        , eye -0.05 (smooth 0.03 0.15) -6
+        ]
+
+
+
+
+
 view : Model -> Svg Msg
 view model =
+    let
+        args =
+            { transformState = model.state
+            , lookAngle = 0
+            , fireAngle = 0
+            , fill = "#bbb"
+            , stroke = "#999"
+            }
+    in
     g
         [ Svg.Events.onClick OnTransform ]
         [ checkersBackground 10
@@ -301,10 +483,9 @@ view model =
         , circle [ cx -0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy -0.5, r 0.1, fill "red" ] []
-        , g
-            [ transform [ scale 0.3 ]
-            ]
-            [ mech model.state 0 0 "#bbb" "#999" ]
+        , g [ transform [ scale 0.5 ] ] [ heli args ]
+        , g [ transform [ scale 0.1, translate2 -4 -3 ] ] [ heli args ]
+        , g [ transform [ scale 0.1, translate2 -4 0 ] ] [ plane args ]
         ]
 
 
