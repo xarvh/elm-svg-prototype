@@ -3,6 +3,7 @@ module App exposing (..)
 import AnimationFrame
 import Ease
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
+import Propeller
 import Svg exposing (..)
 import Svg.Attributes.Typed exposing (..)
 import Svg.Events
@@ -23,8 +24,68 @@ strokeW =
     strokeWidth 0.06
 
 
-heli : Args -> Svg a
-heli args =
+propeller : Float -> Float -> Svg a
+propeller transformState time =
+    let
+        da =
+            transformState * 2
+
+        bladeLength =
+            0.5
+
+        --             2.4 * transformState
+    in
+    g
+        [ transform [ scale 2.4 ] ]
+        [ g [ transform [ rotateDeg (da * 0) ] ] [ Propeller.blade bladeLength ]
+        , g [ transform [ rotateDeg (da * 72) ] ] [ Propeller.blade bladeLength ]
+        , g [ transform [ rotateDeg (da * 144) ] ] [ Propeller.blade bladeLength ]
+        , g [ transform [ rotateDeg (da * 216) ] ] [ Propeller.blade bladeLength ]
+        , g [ transform [ rotateDeg (da * 288) ] ] [ Propeller.blade bladeLength ]
+        ]
+
+
+
+{-
+   let
+       size =
+           2.4
+   in
+   if transformState == 0 then
+       text ""
+   else if transformState == 1 then
+       Propeller.propeller size time
+   else if transformState < 0.5 then
+       -- blades retracting / coming out
+       let
+           da =
+               transformState * 2
+
+           bladeLength =
+               size * transformState
+       in
+       g
+           []
+           [ Propeller.blade bladeLength (da * 0)
+           , Propeller.blade bladeLength (da * 72)
+           , Propeller.blade bladeLength (da * 144)
+           , Propeller.blade bladeLength (da * 216)
+           , Propeller.blade bladeLength (da * 288)
+           ]
+   else
+       text ""
+-}
+--
+--         smooth =
+--             view_smooth transformState
+--
+--         step =
+--             view_step transformState 0.5
+--     in
+
+
+blimp : Args -> Svg a
+blimp args =
     let
         smooth =
             view_smooth args.transformState
@@ -86,96 +147,71 @@ heli args =
     g []
         [ g
             [ transform [ rotateRad args.fireAngle ] ]
-            [ guns
-                { x = smooth 0.42 0.3
-                , y = smooth 0.63 0.33
-                , w = smooth 0.24 0.15
-                , h = 0.68
-                }
 
-            -- mid winglets
+            -- tail wings
+            [ mirrorRectangles
+                { x = 0.30
+                , y = -0.80
+                , w = 0.30
+                , h = 0.30
+                , a = 45
+                }
             , mirrorRectangles
-                { x = smooth 0.5 0.4
-                , y = smooth 0.3 0.16
-                , w = 0.7
-                , h = 0.3
-                , a = smooth -90 20
+                { x = 0.35
+                , y = -0.94
+                , w = 0.35
+                , h = 0.20
+                , a = 0
                 }
-
-            -- main heli body
-            , ellipse
-                { x = 0
-                , y = smooth -0.04 0
-                , w = smooth 0.8 0.42
-                , h = smooth 0.37 1.9
-                }
-
-            -- main mech body
-            , ellipse
-                { x = 0
-                , y = smooth -0.04 0
-                , w = smooth 1.4 0.42
-                , h = smooth 0.5 0.5
-                }
-
-            -- engine
+            -- central winglets
             , mirrorRectangles
-                { x = 0.2
-                , y = smooth -0.4 0
-                , w = 0.2
-                , h = smooth 0.4 0.68
-                , a = 5
+                { x = 0.50
+                , y = 0.20
+                , w = 0.50
+                , h = 0.30
+                , a = 45
+                }
+            {-
+            -}
+
+
+            -- body
+            , ellipse
+                { x = 0
+                , y = 0
+                , w = 1.00
+                , h = 2.00
                 }
             , ellipse
                 { x = 0
-                , y = smooth -0.41 0.1
-                , w = 0.3
-                , h = smooth 0.4 0.7
+                , y = 0
+                , w = 0.65
+                , h = 2.00
+                }
+            , ellipse
+                { x = 0
+                , y = 0
+                , w = 0.25
+                , h = 2.00
+                }
+            -- central tail winglet
+            , rectangle
+                { x = 0
+                , y = -0.80
+                , w = 0.10
+                , h = 0.30
+                , a = 0
+                }
+            , rectangle
+                { x = 0
+                , y = -0.94
+                , w = 0.1
+                , h = 0.20
+                , a = 0
                 }
 
-            -- tail end
-            , mirrorRectangles
-                { x = smooth -0.55 0.2
-                , y = smooth -0.05 -1.39
-                , w = smooth 0.52 0.32
-                , h = smooth 0.42 0.12
-                , a = smooth 110 20
-                }
-            , ellipse
-                { x = 0
-                , y = smooth -0.35 -1.15
-                , w = 0.2
-                , h = smooth 0.2 0.57
-                }
             ]
 
-        --         , heliHead args.transformState args.fill args.stroke (step args.lookAngle args.fireAngle)
-        , g
-            [ transform [ rotateRad args.fireAngle ] ]
-            -- cockpit / head
-            [ ellipse
-                { x = 0
-                , y = smooth 0.03 0.75
-                , w = smooth 0.48 0.22
-                , h = smooth 0.80 0.40
-                }
-
-            , eye
-              { x = 0
-              , y = smooth 0.32 0.85
-              , a = smooth 0 0
-              }
-            , eye
-              { x = smooth -0.14 -0.09
-              , y = smooth 0.18 0.70
-              , a = smooth 15 -10
-              }
-            , eye
-              { x = smooth 0.14 0.09
-              , y = smooth 0.18 0.70
-              , a = smooth -15 10
-              }
-            ]
         ]
 
 
@@ -269,6 +305,7 @@ type MechOrHeli
 type alias Model =
     { state : Float
     , transformTo : MechOrHeli
+    , time : Float
     }
 
 
@@ -278,8 +315,9 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    { state = 0
-    , transformTo = Mech
+    { state = 1
+    , transformTo = Heli
+    , time = 0
     }
         |> noCmd
 
@@ -309,7 +347,11 @@ update mousePosition msg model =
                         Heli ->
                             (+)
             in
-            noCmd { model | state = clamp 0 1 (op model.state (dt / 1000 / transformDuration)) }
+            noCmd
+                { model
+                    | state = clamp 0 1 (op model.state (dt / 1000 / transformDuration))
+                    , time = model.time + dt / 1000
+                }
 
         OnTransform ->
             noCmd <|
@@ -498,8 +540,8 @@ view model =
         , circle [ cx -0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy 0.5, r 0.1, fill "red" ] []
         , circle [ cx 0.5, cy -0.5, r 0.1, fill "red" ] []
-        , g [ transform [ translate2 0.15 0, scale 0.3 ] ] [ heli args ]
-        , g [ transform [ scale 0.1, translate2 -4 -3 ] ] [ heli args ]
+        , g [ transform [ translate2 0.15 0, scale 0.3 ] ] [ blimp args ]
+        , g [ transform [ scale 0.1, translate2 -4 -3 ] ] [ blimp args ]
         , g [ transform [ scale 0.1, translate2 -4 0 ] ] [ plane args ]
         ]
 
