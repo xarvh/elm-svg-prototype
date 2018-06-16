@@ -3,7 +3,6 @@ module App exposing (..)
 import AnimationFrame
 import Ease
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
-import Propeller
 import Svg exposing (..)
 import Svg.Attributes.Typed exposing (..)
 import Svg.Events
@@ -24,64 +23,68 @@ strokeW =
     strokeWidth 0.06
 
 
-propeller : Float -> Float -> Svg a
-propeller transformState time =
-    let
-        da =
-            transformState * 2
+type alias RectangleArgs =
+    { x : Float
+    , y : Float
+    , w : Float
+    , h : Float
+    , a : Float
+    }
 
-        bladeLength =
-            0.5
 
-        --             2.4 * transformState
-    in
-    g
-        [ transform [ scale 2.4 ] ]
-        [ g [ transform [ rotateDeg (da * 0) ] ] [ Propeller.blade bladeLength ]
-        , g [ transform [ rotateDeg (da * 72) ] ] [ Propeller.blade bladeLength ]
-        , g [ transform [ rotateDeg (da * 144) ] ] [ Propeller.blade bladeLength ]
-        , g [ transform [ rotateDeg (da * 216) ] ] [ Propeller.blade bladeLength ]
-        , g [ transform [ rotateDeg (da * 288) ] ] [ Propeller.blade bladeLength ]
+rectangleColor : String -> String -> RectangleArgs -> Svg a
+rectangleColor fillColor strokeColor ar =
+    rect
+        [ transform [ translate2 ar.x ar.y, rotateDeg ar.a ]
+        , fill fillColor
+        , stroke strokeColor
+        , strokeW
+        , width ar.w
+        , height ar.h
+        , x (-ar.w / 2)
+        , y (-ar.h / 2)
+        ]
+        []
+
+
+mirrorRectanglesColor : String -> String -> RectangleArgs -> Svg a
+mirrorRectanglesColor fillColor strokeColor ar =
+    g []
+        [ rectangleColor fillColor strokeColor { ar | x = -ar.x, a = -ar.a }
+        , rectangleColor fillColor strokeColor ar
         ]
 
 
+ellipseColor : String -> String -> { x : Float, y : Float, w : Float, h : Float } -> Svg a
+ellipseColor fillColor strokeColor ar =
+    Svg.ellipse
+        [ cx ar.x
+        , cy ar.y
+        , rx (ar.w / 2)
+        , ry (ar.h / 2)
+        , fill fillColor
+        , stroke strokeColor
+        , strokeW
+        ]
+        []
 
-{-
-   let
-       size =
-           2.4
-   in
-   if transformState == 0 then
-       text ""
-   else if transformState == 1 then
-       Propeller.propeller size time
-   else if transformState < 0.5 then
-       -- blades retracting / coming out
-       let
-           da =
-               transformState * 2
 
-           bladeLength =
-               size * transformState
-       in
-       g
-           []
-           [ Propeller.blade bladeLength (da * 0)
-           , Propeller.blade bladeLength (da * 72)
-           , Propeller.blade bladeLength (da * 144)
-           , Propeller.blade bladeLength (da * 216)
-           , Propeller.blade bladeLength (da * 288)
-           ]
-   else
-       text ""
--}
---
---         smooth =
---             view_smooth transformState
---
---         step =
---             view_step transformState 0.5
---     in
+guns : { x : Float, y : Float, w : Float, h : Float } -> Svg a
+guns ar =
+    mirrorRectanglesColor "#666" "#808080" { x = ar.x, y = ar.y, w = ar.w, h = ar.h, a = 0 }
+
+
+eye : { x : Float, y : Float, a : Float } -> Svg a
+eye ar =
+    Svg.ellipse
+        [ transform [ translate2 ar.x ar.y, rotateDeg ar.a ]
+        , fill "#f80000"
+        , stroke "#990000"
+        , strokeWidth 0.03
+        , ry 0.08
+        , rx 0.05
+        ]
+        []
 
 
 blimp : Args -> Svg a
@@ -93,71 +96,57 @@ blimp args =
         step =
             view_step args.transformState 0
 
-        rectangleColor fillColor strokeColor ar =
-            rect
-                [ transform [ translate2 ar.x ar.y, rotateDeg ar.a ]
-                , fill fillColor
-                , stroke strokeColor
-                , strokeW
-                , width ar.w
-                , height ar.h
-                , x (-ar.w / 2)
-                , y (-ar.h / 2)
-                ]
-                []
-
         rectangle =
             rectangleColor args.fill args.stroke
 
-        mirrorRectangles ar =
-            g []
-                [ rectangle { ar | x = -ar.x, a = -ar.a }
-                , rectangle ar
-                ]
+        mirrorRectangles =
+            mirrorRectanglesColor args.fill args.stroke
 
-        ellipse ar =
-            Svg.ellipse
-                [ cx ar.x
-                , cy ar.y
-                , rx (ar.w / 2)
-                , ry (ar.h / 2)
-                , fill args.fill
-                , stroke args.stroke
-                , strokeW
-                ]
-                []
+        ellipse =
+            ellipseColor args.fill args.stroke
 
-        guns ar =
-            g []
-                [ rectangleColor "#666" "#808080" { x = ar.x, y = ar.y, w = ar.w, h = ar.h, a = 0 }
-                , rectangleColor "#666" "#808080" { x = -ar.x, y = ar.y, w = ar.w, h = ar.h, a = 0 }
-                ]
+        armX =
+            0.6
 
-        eye ar =
-            Svg.ellipse
-                [ transform [ translate2 ar.x ar.y, rotateDeg ar.a ]
-                , fill "#f80000"
-                , stroke "#990000"
-                , strokeWidth 0.03
-                , ry 0.08
-                , rx 0.05
-                ]
-                []
+        armW =
+            0.5
+
+        armH =
+            0.9
+
+        shdX =
+            0.4
+
+        shdY =
+            -0.28
+
+        shdH =
+            0.2
+
+        shdA =
+            -30
     in
     g []
         [ g
             [ transform [ rotateRad args.fireAngle ] ]
+            [ guns
+                { x = smooth 0.42 0.25
+                , y = smooth 0.63 0.8
+                , w = smooth 0.24 0.15
+                , h = 0.68
+                }
+
             -- tail wings
-            [ mirrorRectangles
-                { x = 0.3
-                , y = -0.8
-                , w = 0.3
+            , mirrorRectangles
+                { x = smooth 0.3 0.3
+                , y = smooth -0.6 -0.8
+                , w = smooth 0.2 0.3
                 , h = 0.3
-                , a = 45
+                , a = smooth 15 45
                 }
             , mirrorRectangles
                 { x = 0.35
-                , y = -0.94
+                , y = smooth -0.5 -0.94
                 , w = 0.35
                 , h = 0.2
                 , a = 0
@@ -165,54 +154,59 @@ blimp args =
 
             -- side mid winglets
             , mirrorRectangles
-                { x = 0.5
-                , y = 0
-                , w = 0.5
+                { x = smooth 0.4 0.5
+                , y = smooth 0.5 0
+                , w = smooth 0.4 0.5
                 , h = 0.3
-                , a = 40
+                , a = smooth 70 40
                 }
 
-            -- body
+            -- watermelon bottom, right arm
             , ellipse
-                { x = 0
+                { x = smooth armX 0
                 , y = 0
-                , w = 1.0
-                , h = 2.0
+                , w = smooth armW 1.0
+                , h = smooth armH 2.0
                 }
+
+            -- watermelon mid, left arm
             , ellipse
-                { x = 0
+                { x = smooth -armX 0
                 , y = 0
-                , w = 0.65
-                , h = 2.0
+                , w = smooth armW 0.65
+                , h = smooth armH 2.0
                 }
+
+            -- watermelon top, mech body
             , ellipse
                 { x = 0
-                , y = 0
-                , w = 0.25
-                , h = 2.0
+                , y = smooth -0.1 0
+                , w = smooth 1.2 0.25
+                , h = smooth 0.75 2.0
                 }
 
             -- central tail winglet
             , rectangle
-                { x = 0
-                , y = -0.8
+                { x = smooth shdX 0
+                , y = smooth shdY -0.8
                 , w = 0.1
-                , h = 0.3
-                , a = 0
+                , h = smooth shdH 0.3
+                , a = smooth shdA 0
                 }
             , rectangle
-                { x = 0
-                , y = -0.94
+                { x = smooth -shdX 0
+                , y = smooth shdY -0.94
                 , w = 0.1
-                , h = 0.2
-                , a = 0
+                , h = smooth shdH 0.2
+                , a = smooth -shdA 0
                 }
-            -- central mid winglets
+
+            -- central mid winglet, head
             , rectangle
                 { x = 0
                 , y = 0
-                , w = 0.1
-                , h = 0.5
+                , w = smooth 0.3 0.1
+                , h = smooth 0.7 0.5
                 , a = 0
                 }
             ]
