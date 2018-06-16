@@ -118,7 +118,7 @@ blimp args =
             0.4
 
         shdY =
-            -0.28
+            -0.23
 
         shdH =
             0.2
@@ -138,11 +138,11 @@ blimp args =
 
             -- tail wings
             , mirrorRectangles
-                { x = smooth 0.3 0.3
+                { x = smooth 0.23 0.3
                 , y = smooth -0.6 -0.8
                 , w = smooth 0.2 0.3
                 , h = 0.3
-                , a = smooth 15 45
+                , a = smooth 75 45
                 }
             , mirrorRectangles
                 { x = 0.35
