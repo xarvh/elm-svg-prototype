@@ -147,71 +147,75 @@ blimp args =
     g []
         [ g
             [ transform [ rotateRad args.fireAngle ] ]
-
             -- tail wings
             [ mirrorRectangles
-                { x = 0.30
-                , y = -0.80
-                , w = 0.30
-                , h = 0.30
+                { x = 0.3
+                , y = -0.8
+                , w = 0.3
+                , h = 0.3
                 , a = 45
                 }
             , mirrorRectangles
                 { x = 0.35
                 , y = -0.94
                 , w = 0.35
-                , h = 0.20
+                , h = 0.2
                 , a = 0
                 }
-            -- central winglets
-            , mirrorRectangles
-                { x = 0.50
-                , y = 0.20
-                , w = 0.50
-                , h = 0.30
-                , a = 45
-                }
-            {-
-            -}
 
+            -- side mid winglets
+            , mirrorRectangles
+                { x = 0.5
+                , y = 0
+                , w = 0.5
+                , h = 0.3
+                , a = 40
+                }
 
             -- body
             , ellipse
                 { x = 0
                 , y = 0
-                , w = 1.00
-                , h = 2.00
+                , w = 1.0
+                , h = 2.0
                 }
             , ellipse
                 { x = 0
                 , y = 0
                 , w = 0.65
-                , h = 2.00
+                , h = 2.0
                 }
             , ellipse
                 { x = 0
                 , y = 0
                 , w = 0.25
-                , h = 2.00
+                , h = 2.0
                 }
+
             -- central tail winglet
             , rectangle
                 { x = 0
-                , y = -0.80
-                , w = 0.10
-                , h = 0.30
+                , y = -0.8
+                , w = 0.1
+                , h = 0.3
                 , a = 0
                 }
             , rectangle
                 { x = 0
                 , y = -0.94
                 , w = 0.1
-                , h = 0.20
+                , h = 0.2
                 , a = 0
                 }
-
+            -- central mid winglets
+            , rectangle
+                { x = 0
+                , y = 0
+                , w = 0.1
+                , h = 0.5
+                , a = 0
+                }
             ]
-
         ]
 
 
