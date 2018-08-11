@@ -1,121 +1,129 @@
 module App exposing (..)
 
-import AnimationFrame
+import Browser.Events
+import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
-import Svg exposing (..)
-import Svg.Attributes as SA
-import Svg.Attributes.Typed as SAT exposing (..)
-import Time
+import Math.Vector3 as Vec3 exposing (Vec3, vec3)
+import Svgl.Primitives as Primitives
+import Svgl.Tree exposing (..)
+import WebGL exposing (Entity, Mesh, Shader)
 
 
----
+type alias Attributes =
+    { position : Vec2 }
 
 
-blade : Degrees -> Svg a
-blade angle =
-    let
-        length =
-            0.4
-    in
-    g
-        [ transform [ rotateDeg angle ]
-            , SAT.filter "url(#blur)"
+type alias Uniforms =
+    { entityToCamera : Mat4
+    , dimensions : Vec2
+    , fill : Vec3
+    , stroke : Vec3
+    , strokeWidth : Float
+    , opacity : Float
+    }
+
+
+defaultUniforms : Uniforms
+defaultUniforms =
+    { entityToCamera = Mat4.identity
+    , dimensions = vec2 1 1
+    , fill = vec3 0.4 0.4 0.4
+    , stroke = vec3 0.6 0.6 0.6
+    , strokeWidth = 0.1
+    , opacity = 1
+    }
+
+
+type alias Varying =
+    { localPosition : Vec2 }
+
+
+fragmentShader : Shader {} Uniforms Varying
+fragmentShader =
+    [glsl|
+        precision mediump float;
+
+        uniform mat4 entityToCamera;
+        uniform vec2 dimensions;
+        uniform vec3 fill;
+        uniform vec3 stroke;
+        uniform float strokeWidth;
+        uniform float opacity;
+
+        varying vec2 localPosition;
+
+        // TODO: transform into `pixelSize`, make it a uniform
+        float pixelsPerTile = 30.0;
+        float e = 0.5 / pixelsPerTile;
+
+        /*
+         *     0               1                            1                     0
+         *     |------|--------|----------------------------|----------|----------|
+         *  -edge-e  -edge  -edge+e                      edge-e      edge      edge+e
+         */
+        float mirrorStep (float edge, float p) {
+          return smoothstep(-edge - e, -edge + e, p) - smoothstep(edge - e, edge + e, p);
+        }
+
+        void main () {
+          vec2 strokeSize = dimensions / 2.0 + strokeWidth;
+          vec2 fillSize = dimensions / 2.0 - strokeWidth;
+
+          float alpha = mirrorStep(strokeSize.x, localPosition.x) * mirrorStep(strokeSize.y, localPosition.y);
+          float strokeVsFill = mirrorStep(fillSize.x, localPosition.x) * mirrorStep(fillSize.y, localPosition.y);
+          vec3 color = mix(stroke, fill, strokeVsFill);
+
+          gl_FragColor = opacity * alpha * vec4(color, 1.0);
+        }
+    |]
+
+
+vertexShader : Shader Attributes Uniforms Varying
+vertexShader =
+    [glsl|
+        precision mediump float;
+
+        attribute vec2 position;
+
+        uniform mat4 entityToCamera;
+        uniform vec2 dimensions;
+        uniform vec3 fill;
+        uniform vec3 stroke;
+        uniform float strokeWidth;
+
+        varying vec2 localPosition;
+
+        void main () {
+            localPosition = (dimensions + strokeWidth * 2.0) * position;
+            gl_Position = entityToCamera * vec4(localPosition, 0, 1);
+        }
+    |]
+
+
+mesh : Mesh Attributes
+mesh =
+    WebGL.triangles
+        [ ( Attributes (vec2 -0.5 -0.5)
+          , Attributes (vec2 0.5 -0.5)
+          , Attributes (vec2 0.5 0.5)
+          )
+        , ( Attributes (vec2 -0.5 -0.5)
+          , Attributes (vec2 -0.5 0.5)
+          , Attributes (vec2 0.5 0.5)
+          )
         ]
-        [ Svg.rect
-            [ width 0.025
-            , x -0.0125
-            , height length
-            , fill "url(#bladeRect)"
-            , stroke "none"
-            ]
-            []
-        , Svg.path
-            [ roundArcD length (7 * pi / 12) (5 * pi / 12)
-            , fill "url(#bladeArc)"
-            , stroke "none"
-            ]
-            []
-        ]
-
-
-
-
-prop : Seconds -> Svg a
-prop t =
-    let
-        -- degrees per second
-        speed =
-            1000
-
-        v =
-            t * speed
-
-        angleInDeg =
-            toFloat (floor v % 360)
-    in
-    g
-        []
-        [ defs
-            []
-            [ Svg.filter
-                [ id "blur" ]
-                [ feGaussianBlur
-                    [ result "blur"
-                    , stdDeviation "0.008 0"
-                    ]
-                    []
-                ]
-            , Svg.radialGradient
-                [ id "bladeRect"
-                , cx 0.5
-                , cy 0
-                , r 0.8
-                ]
-                [ Svg.stop [ SA.offset "0%", SA.stopOpacity "1" ] []
-                , Svg.stop [ SA.offset "100%", SA.stopOpacity "0" ] []
-                ]
-            , Svg.radialGradient
-                [ id "bladeArc"
-                , cx 0.5
-                , cy 0
-                , r 0.8
-                ]
-                [ Svg.stop [ SA.offset "0%", SA.stopOpacity "0" ] []
-                , Svg.stop [ SA.offset "100%", SA.stopOpacity "0.1" ] []
-                ]
-            ]
-
-       , g
-               [ transform [ rotateDeg angleInDeg ]
-               ]
-               [ blade 0
-               , blade 72
-               , blade 144
-               , blade 216
-               , blade 288
-               , circle
-                   [ r 0.4
-                   , opacity 0.05
-                   ]
-                   []
-              ]
-        ]
-
-
-
----
-
-
-type alias Seconds =
-    Float
 
 
 
 -- Msg
 
 
+type alias Seconds =
+    Float
+
+
 type Msg
-    = OnAnimationFrame Time.Time
+    = OnAnimationFrame Seconds
 
 
 
@@ -148,78 +156,23 @@ update : Vec2 -> Msg -> Model -> ( Model, Cmd Msg )
 update mousePosition msg model =
     case msg of
         OnAnimationFrame time ->
-            noCmd (time / 1000)
+            noCmd (model + time / 1000)
 
 
 
 -- View
 
 
-checkersBackground : Int -> Svg a
-checkersBackground numberOfSquaresPerSide =
-    let
-        squareSize =
-            1.0 / toFloat numberOfSquaresPerSide
-
-        s =
-            squareSize
-
-        s2 =
-            squareSize * 2
-    in
-    g
-        []
-        [ defs
-            []
-            [ pattern
-                [ id "grid"
-                , width s2
-                , height s2
-                , patternUnits "userSpaceOnUse"
-                ]
-                [ rect
-                    [ x 0
-                    , y 0
-                    , width s
-                    , height s
-                    , fill "#eee"
-                    ]
-                    []
-                , rect
-                    [ x s
-                    , y s
-                    , width s
-                    , height s
-                    , fill "#eee"
-                    ]
-                    []
-                ]
-            ]
-        , rect
-            [ fill "url(#grid)"
-            , x -0.5
-            , y -0.5
-            , width 1
-            , height 1
-            ]
-            []
-        ]
-
-
-view : Model -> Svg Msg
-view model =
-    g
-        []
-        [ checkersBackground 10
-        , circle [ cx -0.5, cy -0.5, r 0.1, fill "red" ] []
-        , circle [ cx -0.5, cy 0.5, r 0.1, fill "red" ] []
-        , circle [ cx 0.5, cy 0.5, r 0.1, fill "red" ] []
-        , circle [ cx 0.5, cy -0.5, r 0.1, fill "red" ] []
-        , prop model
-        ]
+view : Mat4 -> Model -> List Entity
+view worldToCamera model =
+    [ WebGL.entityWith Primitives.settings vertexShader fragmentShader mesh { defaultUniforms | entityToCamera = worldToCamera }
+    ]
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    AnimationFrame.times OnAnimationFrame
-    --Time.every (1000 / 10) OnAnimationFrame
+    Browser.Events.onAnimationFrameDelta OnAnimationFrame
+
+
+
+--Time.every (1000 / 10) OnAnimationFrame

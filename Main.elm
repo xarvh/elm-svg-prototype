@@ -1,14 +1,17 @@
 module Main exposing (..)
 
 import App
+import Browser
+import Browser.Dom
+import Browser.Events
 import Html exposing (Html, div)
 import Html.Attributes exposing (style)
+import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
-import Mouse
-import Svg exposing (g, svg)
-import Svg.Attributes exposing (transform)
+import Math.Vector3 as Vec3 exposing (Vec3, vec3)
+import SplitScreen
 import Task
-import Window
+import WebGL
 
 
 type alias Flags =
@@ -19,15 +22,14 @@ type alias Flags =
 
 
 type alias Model =
-    { windowSize : Window.Size
-    , mousePosition : Mouse.Position
+    { windowSize : { width : Int, height : Int }
+    , mousePosition : { x : Int, y : Int }
     , app : App.Model
     }
 
 
 type Msg
-    = OnWindowResizes Window.Size
-    | OnMouseMoves Mouse.Position
+    = OnWindowResizes ( Int, Int )
     | OnAppMsg App.Msg
 
 
@@ -41,11 +43,11 @@ init flags =
             { width = 1
             , height = 1
             }
-      , mousePosition = Mouse.Position 0 0
+      , mousePosition = { x = 0, y = 0 }
       , app = appModel
       }
     , Cmd.batch
-        [ Window.size |> Task.perform OnWindowResizes
+        [ Browser.Dom.getViewport |> Task.perform (\v -> OnWindowResizes ( v.width, v.height ))
         , appCmd |> Cmd.map OnAppMsg
         ]
     )
@@ -54,11 +56,8 @@ init flags =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        OnWindowResizes windowSize ->
-            ( { model | windowSize = windowSize }, Cmd.none )
-
-        OnMouseMoves mousePosition ->
-            ( { model | mousePosition = mousePosition }, Cmd.none )
+        OnWindowResizes ( w, h ) ->
+            ( { model | windowSize = { width = w, height = h } }, Cmd.none )
 
         OnAppMsg nestedMsg ->
             let
@@ -93,46 +92,29 @@ transformMousePosition model =
     vec2 (pixelX / minSize) (pixelY / minSize)
 
 
-viewBox : Window.Size -> Svg.Attribute a
-viewBox windowSize =
-    let
-        pixelW =
-            toFloat windowSize.width
-
-        pixelH =
-            toFloat windowSize.height
-
-        minSize =
-            min pixelW pixelH
-
-        w =
-            pixelW / minSize
-
-        h =
-            pixelH / minSize
-    in
-    [ -w / 2, -h / 2, w, h ]
-        |> List.map toString
-        |> String.join " "
-        |> Svg.Attributes.viewBox
-
-
 view : Model -> Html Msg
 view model =
+    let
+        viewport =
+            SplitScreen.makeViewports model.windowSize 1
+                |> List.head
+                |> Maybe.withDefault SplitScreen.defaultViewport
+
+        normalizedSize =
+            SplitScreen.normalizedSize viewport
+
+        viewportScale =
+            2 / SplitScreen.fitWidthAndHeight 2 2 viewport
+
+        worldToCamera =
+            Mat4.makeScale (vec3 (viewportScale / normalizedSize.width) (viewportScale / normalizedSize.height) 1)
+    in
     div
-        [ style
-            [ ( "width", "100vw" )
-            , ( "height", "100vh" )
-            , ( "overflow", "hidden" )
-            , ( "position", "absolute" )
-            ]
-        ]
-        [ svg
-            [ viewBox model.windowSize
-            ]
-            [ g
-                [ transform "scale(1, -1)" ]
-                [ App.view model.app |> Svg.map OnAppMsg ]
+        []
+        [ SplitScreen.viewportsWrapper
+            [ App.view worldToCamera model.app
+                |> WebGL.toHtmlWith [ WebGL.alpha True, WebGL.antialias ] (SplitScreen.viewportToWebGLAttributes viewport)
+                |> Html.map OnAppMsg
             ]
         ]
 
@@ -140,14 +122,13 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Window.resizes OnWindowResizes
-        , Mouse.moves OnMouseMoves
+        [ Browser.Events.onResize (\w h -> OnWindowResizes ( w, h ))
         , App.subscriptions model.app |> Sub.map OnAppMsg
         ]
 
 
 main =
-    Html.programWithFlags
+    Browser.document
         { view = view
         , subscriptions = subscriptions
         , update = update
