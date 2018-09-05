@@ -15,9 +15,7 @@ import WebGL
 
 
 type alias Flags =
-    { gamepadDatabaseAsString : String
-    , gamepadDatabaseKey : String
-    , dateNow : Int
+    { dateNow : Int
     }
 
 
@@ -38,6 +36,9 @@ init flags =
     let
         ( appModel, appCmd ) =
             App.init
+
+        viewportToMsg viewport =
+            OnWindowResizes ( floor viewport.viewport.width, floor viewport.viewport.height )
     in
     ( { windowSize =
             { width = 1
@@ -47,7 +48,7 @@ init flags =
       , app = appModel
       }
     , Cmd.batch
-        [ Browser.Dom.getViewport |> Task.perform (\v -> OnWindowResizes ( v.width, v.height ))
+        [ Task.perform viewportToMsg Browser.Dom.getViewport
         , appCmd |> Cmd.map OnAppMsg
         ]
     )
@@ -92,7 +93,7 @@ transformMousePosition model =
     vec2 (pixelX / minSize) (pixelY / minSize)
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
     let
         viewport =
@@ -109,14 +110,15 @@ view model =
         worldToCamera =
             Mat4.makeScale (vec3 (viewportScale / normalizedSize.width) (viewportScale / normalizedSize.height) 1)
     in
-    div
-        []
+    { title = "WebGL Scaffold"
+    , body =
         [ SplitScreen.viewportsWrapper
             [ App.view worldToCamera model.app
                 |> WebGL.toHtmlWith [ WebGL.alpha True, WebGL.antialias ] (SplitScreen.viewportToWebGLAttributes viewport)
                 |> Html.map OnAppMsg
             ]
         ]
+    }
 
 
 subscriptions : Model -> Sub Msg

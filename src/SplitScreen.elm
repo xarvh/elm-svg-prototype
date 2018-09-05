@@ -2,11 +2,11 @@ module SplitScreen exposing (..)
 
 -- TODO: Split Svg and WebGL code
 
-import Html exposing (Html)
-import Html.Attributes
+import Html exposing (Html, Attribute)
+import Html.Attributes as Attributes
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
-import Svg exposing (Attribute)
-import Svg.Attributes
+-- import Svg exposing (Attribute)
+-- import Svg.Attributes
 
 
 -- Types
@@ -48,7 +48,7 @@ defaultViewport =
 
 style : List ( String, String ) -> List (Html.Attribute a)
 style tuples =
-    List.map (\( k, v ) -> Html.Attributes.style k v) tuples
+    List.map (\( k, v ) -> Attributes.style k v) tuples
 
 
 
@@ -166,6 +166,7 @@ normalizedSize viewport =
     }
 
 
+{-
 viewportToViewBox : Viewport -> Svg.Attribute a
 viewportToViewBox viewport =
     let
@@ -176,6 +177,7 @@ viewportToViewBox viewport =
         |> List.map String.fromFloat
         |> String.join " "
         |> Svg.Attributes.viewBox
+-}
 
 
 viewportToStyle : Viewport -> List ( String, String )
@@ -187,17 +189,19 @@ viewportToStyle viewport =
     ]
 
 
+{-
 viewportToSvgAttributes : Viewport -> List (Svg.Attribute a)
 viewportToSvgAttributes viewport =
     viewportToViewBox viewport
         :: style (viewportToStyle viewport)
+-}
 
 
-viewportToWebGLAttributes : Viewport -> List (Svg.Attribute a)
+viewportToWebGLAttributes : Viewport -> List (Attribute a)
 viewportToWebGLAttributes viewport =
     List.concat
-        [ [ Svg.Attributes.width (String.fromInt viewport.w)
-          , Svg.Attributes.height (String.fromInt viewport.h)
+        [ [ Attributes.width viewport.w
+          , Attributes.height viewport.h
           ]
         , style (viewportToStyle viewport)
         ]
