@@ -1,6 +1,5 @@
 module Main exposing (..)
 
-import App
 import Browser
 import Browser.Dom
 import Browser.Events
@@ -9,124 +8,116 @@ import Html.Attributes exposing (style)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
-import SplitScreen
+import Scene
 import Task
+import Time exposing (Posix)
 import WebGL
+import WebGL.Viewport exposing (PixelPosition, PixelSize)
+
+
+-- Types
 
 
 type alias Flags =
-    { dateNow : Int
-    }
+    {}
 
 
 type alias Model =
-    { windowSize : { width : Int, height : Int }
-    , mousePosition : { x : Int, y : Int }
-    , app : App.Model
+    { viewportSize : PixelSize
+    , mousePosition : PixelPosition
+    , currentTime : Posix
     }
 
 
 type Msg
-    = OnWindowResizes ( Int, Int )
-    | OnAppMsg App.Msg
+    = OnResize PixelSize
+    | OnMouseMove PixelPosition
+    | OnAnimationFrame Posix
+
+
+
+-- Init
 
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
     let
-        ( appModel, appCmd ) =
-            App.init
-
-        viewportToMsg viewport =
-            OnWindowResizes ( floor viewport.viewport.width, floor viewport.viewport.height )
-    in
-    ( { windowSize =
-            { width = 1
-            , height = 1
+        model =
+            { viewportSize =
+                { width = 640
+                , height = 480
+                }
+            , mousePosition =
+                { x = 0
+                , y = 0
+                }
             }
-      , mousePosition = { x = 0, y = 0 }
-      , app = appModel
-      }
-    , Cmd.batch
-        [ Task.perform viewportToMsg Browser.Dom.getViewport
-        , appCmd |> Cmd.map OnAppMsg
-        ]
-    )
+
+        cmd =
+            WebGL.Viewport.getSize OnResize
+    in
+    ( model, cmd )
+
+
+
+-- Update
+
+
+noCmd : Model -> ( Model, Cmd Msg )
+noCmd model =
+    ( modle, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        OnWindowResizes ( w, h ) ->
-            ( { model | windowSize = { width = w, height = h } }, Cmd.none )
+        OnResize size ->
+            noCmd { model | viewportSize = size }
 
-        OnAppMsg nestedMsg ->
-            let
-                ( appModel, appCmd ) =
-                    App.update (transformMousePosition model) nestedMsg model.app
-            in
-            ( { model | app = appModel }, Cmd.map OnAppMsg appCmd )
+        OnMouseMove position ->
+            noCmd { model | mousePosition = position }
 
+        OnAnimationFrame currentTime ->
+            noCmd { model | currentTime = currentTime }
 
 
--- Transformations
 
-
-transformMousePosition : Model -> Vec2
-transformMousePosition model =
-    let
-        pixelW =
-            toFloat model.windowSize.width
-
-        pixelH =
-            toFloat model.windowSize.height
-
-        minSize =
-            min pixelW pixelH
-
-        pixelX =
-            toFloat model.mousePosition.x - pixelW / 2
-
-        pixelY =
-            pixelH / 2 + 1 - toFloat model.mousePosition.y
-    in
-    vec2 (pixelX / minSize) (pixelY / minSize)
+-- View
 
 
 view : Model -> Browser.Document Msg
 view model =
     let
-        viewport =
-            SplitScreen.makeViewports model.windowSize 1
-                |> List.head
-                |> Maybe.withDefault SplitScreen.defaultViewport
+        scaledViewport =
+            WebGL.Viewport.fitLength model.viewportSize 2.0
 
-        normalizedSize =
-            SplitScreen.normalizedSize viewport
-
-        viewportScale =
-            2 / SplitScreen.fitWidthAndHeight 2 2 viewport
-
-        worldToCamera =
-            Mat4.makeScale (vec3 (viewportScale / normalizedSize.width) (viewportScale / normalizedSize.height) 1)
+        entities =
+            Scene.entities
+                { scaledViewport = scaledViewport
+                , normalizedMousePosition = Viewport.normalizedMousePosition scaledViewport model.mousePosition
+                , time = model.currentTime
+                }
     in
     { title = "WebGL Scaffold"
-    , body =
-        [ SplitScreen.viewportsWrapper
-            [ App.view worldToCamera model.app
-                |> WebGL.toHtmlWith [ WebGL.alpha True, WebGL.antialias ] (SplitScreen.viewportToWebGLAttributes viewport)
-                |> Html.map OnAppMsg
-            ]
-        ]
+    , body = [ Viewport.canvas model.viewportSize entities ]
     }
+
+
+
+-- Subscriptions
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Browser.Events.onResize (\w h -> OnWindowResizes ( w, h ))
-        , App.subscriptions model.app |> Sub.map OnAppMsg
+        [ WebGL.Viewport.onResize OnResize
+        , Browser.Events.onAnimationFrame OnAnimationFrame
+        , Browser.Events.onMouseMove OnMouseMove
         ]
+
+
+
+-- Main
 
 
 main =
