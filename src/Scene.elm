@@ -17,7 +17,7 @@ type alias VertexAttributes =
 
 
 type alias Uniforms =
-    { color : Vec3
+    { entityToCamera : Mat4
     , time : Float
     , mousePosition : Vec2
     }
@@ -60,8 +60,9 @@ vertexShader =
         attribute float y;
         attribute vec3 vertexColor;
 
-        uniform vec3 color;
+        uniform mat4 entityToCamera;
         uniform float time;
+        uniform vec2 mousePosition;
 
         varying vec3 varyingColor;
 
@@ -80,8 +81,9 @@ pixelShader =
     [glsl|
         precision mediump float;
 
-        uniform vec3 color;
+        uniform mat4 entityToCamera;
         uniform float time;
+        uniform vec2 mousePosition;
 
         varying vec3 varyingColor;
 
@@ -100,7 +102,6 @@ entities { worldToCamera, mousePosition, time } =
     let
         entityToCamera =
             worldToCamera
-                |> Mat4.scale 1
 
         uniforms =
             { entityToCamera = entityToCamera

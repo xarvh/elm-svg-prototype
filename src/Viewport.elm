@@ -5,6 +5,7 @@ import Browser.Events
 import Html exposing (Attribute, Html)
 import Html.Attributes exposing (style)
 import Math.Matrix4 as Mat4 exposing (Mat4)
+import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 import Task
 
 
@@ -43,7 +44,7 @@ getWindowSize msgConstructor =
         viewportToMsg viewport =
             msgConstructor
                 { width = floor viewport.viewport.width
-                , width = floor viewport.viewport.height
+                , height = floor viewport.viewport.height
                 }
     in
     Task.perform viewportToMsg Browser.Dom.getViewport
@@ -63,8 +64,8 @@ uniformScaleToFitLength pixelSize minimumContainedLength =
     minimumContainedLength / toFloat (min pixelSize.width pixelSize.height)
 
 
-pixelToWorldUnits : PixelPosition -> PixelSize -> Float -> WorldPosition
-pixelToWorldUnits pixelPosition pixelSize minimumContainedLength =
+pixelToWorldUnits : PixelSize -> Float -> PixelPosition -> WorldPosition
+pixelToWorldUnits pixelSize minimumContainedLength pixelPosition =
     let
         viewportLeft =
             0

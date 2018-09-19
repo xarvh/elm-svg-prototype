@@ -4,6 +4,7 @@ import Browser
 import Browser.Events
 import Html exposing (Html, div)
 import Html.Attributes exposing (style)
+import Json.Decode exposing (Decoder)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
@@ -23,7 +24,7 @@ type alias Flags =
 type alias Model =
     { viewportSize : PixelSize
     , mousePosition : PixelPosition
-    , currentTime : Posix
+    , currentTimeInSeconds : Float
     }
 
 
@@ -49,6 +50,7 @@ init flags =
                 { top = 0
                 , left = 0
                 }
+            , currentTimeInSeconds = 0
             }
 
         cmd =
@@ -63,7 +65,7 @@ init flags =
 
 noCmd : Model -> ( Model, Cmd Msg )
 noCmd model =
-    ( modle, Cmd.none )
+    ( model, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -75,8 +77,8 @@ update msg model =
         OnMouseMove position ->
             noCmd { model | mousePosition = position }
 
-        OnAnimationFrame currentTime ->
-            noCmd { model | currentTime = currentTime }
+        OnAnimationFrame posixTimestamp ->
+            noCmd { model | currentTimeInSeconds = toFloat (Time.posixToMillis posixTimestamp) / 1000 }
 
 
 
@@ -92,8 +94,8 @@ view model =
         entities =
             Scene.entities
                 { worldToCamera = Viewport.worldToPixelTransform model.viewportSize worldSize
-                , mousePosition = Viewport.pixelToWorldUnits model.viewportSize worldSize model.mousePosition
-                , time = model.currentTime
+                , mousePosition = Vec2.fromRecord <| Viewport.pixelToWorldUnits model.viewportSize worldSize model.mousePosition
+                , time = model.currentTimeInSeconds
                 }
     in
     { title = "WebGL Scaffold"
@@ -105,12 +107,19 @@ view model =
 -- Subscriptions
 
 
+mousePositionDecoder : Decoder PixelPosition
+mousePositionDecoder =
+    Json.Decode.map2 PixelPosition
+        (Json.Decode.field "clientX" Json.Decode.int)
+        (Json.Decode.field "clientY" Json.Decode.int)
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Viewport.onWindowResize OnResize
         , Browser.Events.onAnimationFrame OnAnimationFrame
-        , Browser.Events.onMouseMove OnMouseMove
+        , Browser.Events.onMouseMove mousePositionDecoder |> Sub.map OnMouseMove
         ]
 
 
