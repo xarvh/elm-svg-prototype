@@ -1,7 +1,6 @@
 module Main exposing (..)
 
 import Browser
-import Browser.Dom
 import Browser.Events
 import Html exposing (Html, div)
 import Html.Attributes exposing (style)
@@ -9,10 +8,9 @@ import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
 import Scene
-import Task
 import Time exposing (Posix)
+import Viewport exposing (PixelPosition, PixelSize)
 import WebGL
-import WebGL.Viewport exposing (PixelPosition, PixelSize)
 
 
 -- Types
@@ -48,13 +46,13 @@ init flags =
                 , height = 480
                 }
             , mousePosition =
-                { x = 0
-                , y = 0
+                { top = 0
+                , left = 0
                 }
             }
 
         cmd =
-            WebGL.Viewport.getSize OnResize
+            Viewport.getWindowSize OnResize
     in
     ( model, cmd )
 
@@ -88,18 +86,18 @@ update msg model =
 view : Model -> Browser.Document Msg
 view model =
     let
-        scaledViewport =
-            WebGL.Viewport.fitLength model.viewportSize 2.0
+        worldSize =
+            2.0
 
         entities =
             Scene.entities
-                { scaledViewport = scaledViewport
-                , normalizedMousePosition = Viewport.normalizedMousePosition scaledViewport model.mousePosition
+                { worldToCamera = Viewport.worldToPixelTransform model.viewportSize worldSize
+                , mousePosition = Viewport.pixelToWorldUnits model.viewportSize worldSize model.mousePosition
                 , time = model.currentTime
                 }
     in
     { title = "WebGL Scaffold"
-    , body = [ Viewport.canvas model.viewportSize entities ]
+    , body = [ WebGL.toHtml (Viewport.attributes model.viewportSize) entities ]
     }
 
 
@@ -110,7 +108,7 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ WebGL.Viewport.onResize OnResize
+        [ Viewport.onWindowResize OnResize
         , Browser.Events.onAnimationFrame OnAnimationFrame
         , Browser.Events.onMouseMove OnMouseMove
         ]
