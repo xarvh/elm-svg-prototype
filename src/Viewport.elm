@@ -74,7 +74,6 @@ pixelToWorldUnits pixelSize minimumContainedLength pixelPosition =
     { x = toFloat pixelX * minimumContainedLength / toFloat pixelSize.width / scaleX
     , y = toFloat pixelY * minimumContainedLength / toFloat pixelSize.height / scaleY
     }
-        |> Debug.log "xy"
 
 
 worldToPixelScale : PixelSize -> Float -> { scaleX : Float, scaleY : Float }

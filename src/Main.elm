@@ -47,8 +47,8 @@ init flags =
                 , height = 480
                 }
             , mousePosition =
-                { top = 0
-                , left = 0
+                { top = 320
+                , left = 240
                 }
             , currentTimeInSeconds = 0
             }

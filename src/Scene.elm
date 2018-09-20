@@ -7,6 +7,27 @@ import Math.Vector4 as Vec4 exposing (Vec4, vec4)
 import WebGL exposing (Entity, Mesh, Shader)
 
 
+-- Periodic functions
+
+
+periodLinear : Float -> Float -> Float -> Float
+periodLinear time phase period =
+    let
+        t =
+            time + phase * period
+
+        n =
+            t / period |> floor |> toFloat
+    in
+    t / period - n
+
+
+periodHarmonic : Float -> Float -> Float -> Float
+periodHarmonic time phase period =
+    2 * pi * periodLinear time phase period |> sin
+
+
+
 -- Shader records
 
 
@@ -19,7 +40,7 @@ type alias VertexAttributes =
 
 type alias Uniforms =
     { entityToCamera : Mat4
-    , time : Float
+    , normalizedTime : Float
     , mousePosition : Vec2
     }
 
@@ -62,8 +83,8 @@ vertexShader =
         attribute float y;
         attribute vec3 vertexColor;
 
+        uniform float normalizedTime;
         uniform mat4 entityToCamera;
-        uniform float time;
         uniform vec2 mousePosition;
 
         varying vec3 color;
@@ -82,8 +103,8 @@ pixelShader =
     [glsl|
         precision mediump float;
 
+        uniform float normalizedTime;
         uniform mat4 entityToCamera;
-        uniform float time;
         uniform vec2 mousePosition;
 
         varying vec3 color;
@@ -92,10 +113,10 @@ pixelShader =
         void main () {
           float d = distance(position.xy, mousePosition);
 
-          float whiteness = d;
+          float whiteness = (1.0 - sqrt(d)) * (0.75 + 0.25 * normalizedTime);
 
           vec3 white = vec3(1.0, 1.0, 1.0);
-          vec3 blendedColor = mix(white, color, sqrt(whiteness));
+          vec3 blendedColor = mix(color, white, whiteness);
 
           gl_FragColor = vec4(blendedColor, 1.0);
         }
@@ -115,7 +136,7 @@ entities { worldToCamera, mousePosition, time } =
         uniforms =
             { entityToCamera = entityToCamera
             , mousePosition = mousePosition
-            , time = time
+            , normalizedTime = periodHarmonic time 0 1.5
             }
     in
     [ WebGL.entity
