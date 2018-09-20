@@ -59,11 +59,6 @@ onWindowResize msgConstructor =
 -- Normalized geometry
 
 
-uniformScaleToFitLength : PixelSize -> Float -> Float
-uniformScaleToFitLength pixelSize minimumContainedLength =
-    minimumContainedLength / toFloat (min pixelSize.width pixelSize.height)
-
-
 pixelToWorldUnits : PixelSize -> Float -> PixelPosition -> WorldPosition
 pixelToWorldUnits pixelSize minimumContainedLength pixelPosition =
     let
@@ -73,29 +68,31 @@ pixelToWorldUnits pixelSize minimumContainedLength pixelPosition =
         pixelY =
             1 - pixelPosition.top + pixelSize.height // 2
 
-        scale =
-            uniformScaleToFitLength pixelSize minimumContainedLength
+        { scaleX, scaleY } =
+            worldToPixelScale pixelSize minimumContainedLength
     in
-    { x = toFloat pixelX * scale
-    , y = toFloat pixelY * scale
+    { x = toFloat pixelX * minimumContainedLength / toFloat pixelSize.width / scaleX
+    , y = toFloat pixelY * minimumContainedLength / toFloat pixelSize.height / scaleY
     }
-      |> Debug.log "xy"
+        |> Debug.log "xy"
+
+
+worldToPixelScale : PixelSize -> Float -> { scaleX : Float, scaleY : Float }
+worldToPixelScale pixelSize minimumContainedLength =
+    let
+        minSize =
+            min pixelSize.width pixelSize.height
+    in
+    { scaleX = toFloat minSize / toFloat pixelSize.width
+    , scaleY = toFloat minSize / toFloat pixelSize.height
+    }
 
 
 worldToPixelTransform : PixelSize -> Float -> Mat4
 worldToPixelTransform pixelSize minimumContainedLength =
     let
-        minSize =
-            min pixelSize.width pixelSize.height
-
-        scale =
-            toFloat minSize
-
-        scaleX =
-            scale / toFloat pixelSize.width
-
-        scaleY =
-            scale / toFloat pixelSize.height
+        { scaleX, scaleY } =
+            worldToPixelScale pixelSize minimumContainedLength
     in
     Mat4.makeScale (vec3 scaleX scaleY 1)
 

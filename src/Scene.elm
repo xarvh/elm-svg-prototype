@@ -71,8 +71,8 @@ vertexShader =
 
         void main () {
             color = vertexColor;
-            position = entityToCamera * vec4(x, y, 0, 1);
-            gl_Position = position;
+            position = vec4(x, y, 0, 1);
+            gl_Position = entityToCamera * position;
         }
     |]
 
@@ -95,7 +95,7 @@ pixelShader =
           float whiteness = d;
 
           vec3 white = vec3(1.0, 1.0, 1.0);
-          vec3 blendedColor = mix(color, white, sqrt(whiteness));
+          vec3 blendedColor = mix(white, color, sqrt(whiteness));
 
           gl_FragColor = vec4(blendedColor, 1.0);
         }
