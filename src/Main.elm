@@ -99,7 +99,16 @@ view model =
                 }
     in
     { title = "WebGL Scaffold"
-    , body = [ WebGL.toHtml (Viewport.attributes model.viewportSize) entities ]
+    , body =
+        [ div
+            -- TODO: move to Viewport?
+            [ style "width" (String.fromInt model.viewportSize.width ++ "px")
+            , style "height" (String.fromInt model.viewportSize.height ++ "px")
+            , style "overflow" "hidden"
+            ]
+            [ WebGL.toHtml (Viewport.attributes model.viewportSize) entities ]
+        , Html.node "style" [] [ Html.text "body { margin: 0; }" ]
+        ]
     }
 
 
@@ -109,7 +118,7 @@ view model =
 
 mousePositionDecoder : Decoder PixelPosition
 mousePositionDecoder =
-    Json.Decode.map2 PixelPosition
+    Json.Decode.map2 (\x y -> { left = x, top = y })
         (Json.Decode.field "clientX" Json.Decode.int)
         (Json.Decode.field "clientY" Json.Decode.int)
 

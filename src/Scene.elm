@@ -3,6 +3,7 @@ module Scene exposing (..)
 import Math.Matrix4 as Mat4 exposing (Mat4)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Math.Vector3 as Vec3 exposing (Vec3, vec3)
+import Math.Vector4 as Vec4 exposing (Vec4, vec4)
 import WebGL exposing (Entity, Mesh, Shader)
 
 
@@ -24,7 +25,8 @@ type alias Uniforms =
 
 
 type alias Varyings =
-    { varyingColor : Vec3
+    { color : Vec3
+    , position : Vec4
     }
 
 
@@ -64,14 +66,13 @@ vertexShader =
         uniform float time;
         uniform vec2 mousePosition;
 
-        varying vec3 varyingColor;
+        varying vec3 color;
+        varying vec4 position;
 
         void main () {
-            varyingColor = vertexColor;
-            gl_Position.x = x;
-            gl_Position.y = y;
-            gl_Position.z = 0.0;
-            gl_Position.w = 2.0;
+            color = vertexColor;
+            position = entityToCamera * vec4(x, y, 0, 1);
+            gl_Position = position;
         }
     |]
 
@@ -85,10 +86,18 @@ pixelShader =
         uniform float time;
         uniform vec2 mousePosition;
 
-        varying vec3 varyingColor;
+        varying vec3 color;
+        varying vec4 position;
 
         void main () {
-          gl_FragColor = vec4(varyingColor, 1.0);
+          float d = distance(position.xy, mousePosition);
+
+          float whiteness = d;
+
+          vec3 white = vec3(1.0, 1.0, 1.0);
+          vec3 blendedColor = mix(color, white, sqrt(whiteness));
+
+          gl_FragColor = vec4(blendedColor, 1.0);
         }
 
     |]

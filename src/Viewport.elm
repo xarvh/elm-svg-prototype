@@ -67,17 +67,11 @@ uniformScaleToFitLength pixelSize minimumContainedLength =
 pixelToWorldUnits : PixelSize -> Float -> PixelPosition -> WorldPosition
 pixelToWorldUnits pixelSize minimumContainedLength pixelPosition =
     let
-        viewportLeft =
-            0
-
-        viewportTop =
-            0
-
         pixelX =
-            pixelPosition.left - viewportLeft - pixelSize.width // 2
+            pixelPosition.left - pixelSize.width // 2
 
         pixelY =
-            1 - pixelPosition.top + viewportTop + pixelSize.height // 2
+            1 - pixelPosition.top + pixelSize.height // 2
 
         scale =
             uniformScaleToFitLength pixelSize minimumContainedLength
@@ -85,15 +79,25 @@ pixelToWorldUnits pixelSize minimumContainedLength pixelPosition =
     { x = toFloat pixelX * scale
     , y = toFloat pixelY * scale
     }
+      |> Debug.log "xy"
 
 
 worldToPixelTransform : PixelSize -> Float -> Mat4
 worldToPixelTransform pixelSize minimumContainedLength =
     let
+        minSize =
+            min pixelSize.width pixelSize.height
+
         scale =
-            uniformScaleToFitLength pixelSize minimumContainedLength
+            toFloat minSize
+
+        scaleX =
+            scale / toFloat pixelSize.width
+
+        scaleY =
+            scale / toFloat pixelSize.height
     in
-    Mat4.makeScale (vec3 scale scale 1)
+    Mat4.makeScale (vec3 scaleX scaleY 1)
 
 
 
@@ -104,10 +108,6 @@ attributes : PixelSize -> List (Attribute a)
 attributes pixelSize =
     [ style "width" (String.fromInt pixelSize.width ++ "px")
     , style "height" (String.fromInt pixelSize.height ++ "px")
-
-    --, style "position" "absolute"
-    --, style "left" (String.fromInt viewport.x ++ "px")
-    --, style "top" (String.fromInt viewport.y ++ "px")
     , Html.Attributes.width pixelSize.width
     , Html.Attributes.height pixelSize.height
     ]
