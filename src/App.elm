@@ -1,17 +1,16 @@
 module App exposing (..)
 
-import AnimationFrame
+import Browser.Events
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
 import Svg exposing (..)
 import Svg.Attributes.Typed exposing (..)
-import Time
 
 
 -- Msg
 
 
 type Msg
-    = OnAnimationFrame Time.Time
+    = OnAnimationFrame Float
 
 
 
@@ -116,4 +115,4 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    AnimationFrame.diffs OnAnimationFrame
+    Browser.Events.onAnimationFrameDelta OnAnimationFrame

@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import App
+import Browser
 import Html exposing (Html, div)
 import Html.Attributes exposing (style)
 import Math.Vector2 as Vec2 exposing (Vec2, vec2)
@@ -20,7 +20,7 @@ type alias Flags =
 
 type alias Model =
     { windowSize : Window.Size
-    , mousePosition : Mouse.Position
+    , mousePosition : 
     , app : App.Model
     }
 
